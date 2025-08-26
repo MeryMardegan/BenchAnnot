@@ -1,0 +1,15 @@
+# Large data files
+*.gz
+*.zip
+
+# Heavy results
+results/
+*.out
+*.log
+
+# Environments
+.env
+.venv/
+__pycache__/
+*.pyc
+*.Rhistory
