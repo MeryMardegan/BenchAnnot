@@ -4,6 +4,7 @@
 
 # Heavy results
 results/
+data/
 *.out
 *.log
 
@@ -13,3 +14,7 @@ results/
 __pycache__/
 *.pyc
 *.Rhistory
+
+# Nextflow
+work/
+.nextflow
