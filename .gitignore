@@ -13,3 +13,7 @@ results/
 __pycache__/
 *.pyc
 *.Rhistory
+
+# Nextflow
+work/
+.nextflow
