@@ -1,6 +1,7 @@
 # Large data files
 *.gz
 *.zip
+databases/
 
 # Heavy results
 results/
