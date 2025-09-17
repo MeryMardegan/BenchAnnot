@@ -14,7 +14,6 @@ process INTERPROSCAN {
           path ("${sample_id}.interpro.gff3")
 
     script:
-    // Se for modo teste, cria um subset com as 10 primeiras sequências
     def outbase = "${sample_id}.interpro"
     def inputFa = params.ips_test ? "${sample_id}.subset.faa" : faa
     def fmt = (params.ips_formats ?: 'tsv,gff3')
