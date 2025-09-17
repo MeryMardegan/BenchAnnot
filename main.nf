@@ -33,5 +33,9 @@ workflow gff_kofamscan {
     KOFAMSCAN(proteins, profiles, ko_list)
 }
 
+workflow egapx {
+
+}
+
 workflow.onComplete { println "Workflow completed successfully!" }
 
