@@ -1,10 +1,9 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-include { PROKKA } from './modules/prokka.nf'
-include { BAKTA } from './modules/bakta.nf'
 include { GFFREAD     } from './modules/gffread.nf'
 include { KOFAMSCAN   } from './modules/kofamscan.nf'
+include { INTERPROSCAN } from './modules/interproscan.nf'
 
 
 Channel
@@ -17,20 +16,17 @@ Channel
   .filter { id, fa, ann -> ann.exists() }
   .set { genome_pairs }
 
-// DB já baixado manualmente
-profiles = Channel.fromPath('data/eukaryotes/db/profiles', checkIfExists: true)
-ko_list = Channel.fromPath('data/eukaryotes/db/ko_list', checkIfExists: true)
+// DBs específicos do KOFAM
+profiles = Channel.fromPath('$projectDir/data/eukaryotes/db/kofamscam/profiles/*', checkIfExists: true)
+ko_list = Channel.fromPath('$projectDir/data/eukaryotes/db/kofamscam/ko_list', checkIfExists: true)
 
-workflow {
-    fasta_ch = Channel.fromPath('data/*.fna')
-    bakta_db_ch = Channel.value(params.bakta_db_dir)
+workflow gff_interpro {
 
-    if (params.bakta_db_dir == null) {
-        error "Error: Missing required parameter. Use --bakta_db_dir absolute/path/to/bakta/db on the command line."
-    }
-    
-    PROKKA(fasta_ch)
-    BAKTA(fasta_ch, bakta_db_ch)
+    proteins = GFFREAD(genome_pairs)
+    INTERPROSCAN(proteins)
+}
+
+workflow gff_kofamscan {
 
     proteins = GFFREAD(genome_pairs)
     KOFAMSCAN(proteins, profiles, ko_list)
