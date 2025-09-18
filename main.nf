@@ -7,7 +7,7 @@ include { INTERPROSCAN } from './modules/interproscan.nf'
 
 
 Channel
-  .fromPath('data/eukaryotes/*.fna')
+  .fromPath('$projectDir/data/eukaryotes/*.fna')
   .map { fa ->
     def id  = fa.baseName
     def ann = file("data/eukaryotes/${id}.gff")   // use GFF
@@ -20,8 +20,6 @@ Channel
 profiles = Channel.fromPath('$projectDir/data/eukaryotes/db/kofamscam/profiles/*', checkIfExists: true)
 ko_list = Channel.fromPath('$projectDir/data/eukaryotes/db/kofamscam/ko_list', checkIfExists: true)
 
-// arlista de arquivos .yml de genomas para egapx
-egapx = Channel.fromPath('$projectDir/tool/eukaryotes/egapx/*.yml')
 
 workflow gff_interpro {
 
@@ -33,10 +31,6 @@ workflow gff_kofamscan {
 
     proteins = GFFREAD(genome_pairs)
     KOFAMSCAN(proteins, profiles, ko_list)
-}
-
-workflow egapx {
-
 }
 
 workflow.onComplete { println "Workflow completed successfully!" }
