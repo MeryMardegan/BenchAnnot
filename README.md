@@ -4,7 +4,8 @@ BenchAnnot is a reproducible framework for benchmarking genome annotation
 tools against curated reference annotations. This repository has two parts:
 
 - **Analysis workflow** — notebooks and Python modules that audit, clean, and
-  compare annotation tool outputs (eukaryotic and prokaryotic).
+  compare annotation tool outputs (eukaryotic and prokaryotic), under
+  [`analysis_benchannot/`](analysis_benchannot/).
 - **Nextflow pipeline** — `main.nf` that orchestrates functional annotation
   tools (Prokka, Bakta, GFFread, KofamScan) in a reproducible and scalable way.
 
@@ -14,7 +15,7 @@ The current refactor focuses on the eukaryotic post-processing workflow for
 *Saccharomyces cerevisiae* and *Drosophila melanogaster*. Prokaryotic notebooks
 remain available, but their planned improvements are documented separately.
 
-Run the eukaryotic notebooks from `2_run/notebooks/eukaryotic/` in this order:
+Run the eukaryotic notebooks from `analysis_benchannot/2_run/notebooks/eukaryotic/` in this order:
 
 1. `1_audit_prepare_reference.ipynb` audits GFF/GFFread processing and builds
    an independent NCBI reference universe.
@@ -32,26 +33,28 @@ sequence-extraction losses; it does not define the reference denominator.
 Create the locked environment and install the package:
 
 ```bash
-conda-lock install --name benchannot 1_setup/conda-lock.yml
+conda-lock install --name benchannot analysis_benchannot/1_setup/conda-lock.yml
 conda activate benchannot
-python -m pip install -e .
+python -m pip install -e analysis_benchannot/
 python -m ipykernel install --user --name benchannot --display-name "Python (BenchAnnot)"
 ```
 
 Then open the project in Jupyter and execute the three eukaryotic notebooks
-top to bottom. Detailed setup and workflow notes are in [`docs/`](docs/).
+top to bottom. Detailed setup and workflow notes are in
+[`analysis_benchannot/docs/`](analysis_benchannot/docs/).
 
 Run the Python test suite with:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s analysis_benchannot/tests -v
 ```
 
 ### Inputs
 
 Reference files are stored under `data/genome_eukaryote/`. Tool outputs are
 stored under `data/origin/eukaryote_output_tools/`. File names and required
-schemas are documented in [`docs/data-contracts.md`](docs/data-contracts.md).
+schemas are documented in
+[`analysis_benchannot/docs/data-contracts.md`](analysis_benchannot/docs/data-contracts.md).
 
 ### Outputs
 
@@ -68,18 +71,19 @@ The notebooks write organized outputs under `2_run/output/eukaryotic/`:
 
 Generated outputs are analysis artifacts, not source inputs. The scientific
 definitions and denominator rules are described in
-[`docs/eukaryotic-workflow.md`](docs/eukaryotic-workflow.md).
+[`analysis_benchannot/docs/eukaryotic-workflow.md`](analysis_benchannot/docs/eukaryotic-workflow.md).
 
 ### Project layout
 
 ```text
-1_setup/                 locked environment and setup notes
-2_run/notebooks/         eukaryotic and prokaryotic notebooks
-2_run/output/            generated analysis artifacts
-data/                    reference genomes and tool outputs
-docs/                    workflow, schema, and roadmap documentation
-src/benchannot/          tested parsing and analysis functions
-tests/                   unit tests for the extracted logic
+analysis_benchannot/
+    1_setup/                 locked environment and setup notes
+    2_run/notebooks/         eukaryotic and prokaryotic notebooks
+    2_run/output/            generated analysis artifacts
+    data/                    reference genomes and tool outputs
+    docs/                    workflow, schema, and roadmap documentation
+    src/benchannot/          tested parsing and analysis functions
+    tests/                   unit tests for the extracted logic
 ```
 
 ### Scope and status
@@ -87,7 +91,7 @@ tests/                   unit tests for the extracted logic
 The eukaryotic workflow is the validated active path. The prokaryotic
 notebooks have not been changed in this refactor; correctness and
 reproducibility priorities for a future pass are listed in
-[`docs/prokaryotic-roadmap.md`](docs/prokaryotic-roadmap.md).
+[`analysis_benchannot/docs/prokaryotic-roadmap.md`](analysis_benchannot/docs/prokaryotic-roadmap.md).
 
 ## Nextflow pipeline
 
