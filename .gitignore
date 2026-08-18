@@ -6,10 +6,10 @@ __pycache__/
 *.xls
 .opencode/
 data/
-2_run/output/
+**/2_run/output/
+**/2_run/tmp/
 .venv/
 .vscode/
-2_run/tmp/
 
 # Large data files
 *.gz
