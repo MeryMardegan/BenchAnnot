@@ -10,3 +10,21 @@ data/
 .venv/
 .vscode/
 2_run/tmp/
+
+# Large data files
+*.gz
+*.zip
+databases/
+
+# Heavy results
+results/
+*.out
+*.log
+
+# Environments
+.env
+*.Rhistory
+
+# Nextflow
+work/
+.nextflow
