@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.tsv
+*.xlsx
+*.xls
+.opencode/
+data/
+2_run/output/
+.venv/
+.vscode/
+2_run/tmp/
