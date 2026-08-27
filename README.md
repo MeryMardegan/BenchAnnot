@@ -3,11 +3,116 @@
 BenchAnnot is a reproducible framework for benchmarking genome annotation
 tools against curated reference annotations. This repository has two parts:
 
+- **Nextflow pipeline** — `main.nf` multiple functional annotation tools for
+ genomes using Nextflow DSL2. It is designed for reproducible, scalable benchmarking 
+ and downstream analysis.
 - **Analysis workflow** — notebooks and Python modules that audit, clean, and
   compare annotation tool outputs (eukaryotic and prokaryotic), under
   [`analysis_benchannot/`](analysis_benchannot/).
-- **Nextflow pipeline** — `main.nf` that orchestrates functional annotation
-  tools (Prokka, Bakta, GFFread, KofamScan) in a reproducible and scalable way.
+
+
+## Nextflow pipeline
+
+Orchestrates annotation tools and produces reproducible results for
+benchmarking and downstream analysis.
+
+### Inputs
+
+Place FASTA files (`.fna`) in the `data/genome_eukaryote` or `data/genome_prokaryote` directory.
+Required files for eukaryotes:
+- Genome FASTA files: `data/eukaryotes/<sample>.fna`
+- Matching GFF files:  `data/eukaryotes/<sample>.gff`
+The pipeline pairs FASTA and GFF files by basename.
+
+### Run
+
+```bash
+nextflow run main.nf --bakta_db_dir path/to/bakta/db
+```
+
+Bakta requires a specific database (version 6), downloadable
+[here](https://zenodo.org/records/14916843). After downloading and extracting,
+provide the path with `--bakta_db_dir`.
+
+### Outputs
+
+- Annotated results for each genome are stored in the `data/reproduced/eukaryote_output_tools` directory for eukaryote and `data/reproduced/prokaryote_output_tools`.
+- Intermediate files are stored in the `work/` directory.
+
+### Modules
+
+**Prokaryote**
+- `modules/prokka.nf` — Prokka 1.14.6 ([GitHub](https://github.com/tseemann/prokka), [Docker Image](https://hub.docker.com/r/staphb/prokka))
+- `modules/bakta.nf` — Bakta 1.11.3 ([GitHub](https://github.com/oschwengers/bakta), [Docker Image](https://hub.docker.com/r/oschwengers/bakta))
+- `modules/eggnog.nf` — eggnog-mapper-v2 2.1.13 ([GitHub](https://github.com/eggnogdb/eggnog-mapper))
+- `modules/pgap.nf`— Prokaryotic Genome Annotation Pipeline 2025-05-06.build7983 ([GitHub](https://github.com/ncbi/pgap))
+**Eukaryote**
+- `modules/gffread.nf` — processes GFF/GTF files (e.g., extracting transcript sequences)
+- `modules/kofamscan.nf` — assigns KEGG Orthologs using HMM profiles
+- `modules/interproscan.nf` — functional domain and GO/pathway annotation
+- `module/eggNOG-mapper.nf` — Orthology-based functional annotation.
+
+### Parameters
+
+Some modules require specific database directories to be provided as parameters.
+Set database locations in [nextflow.config](nextflow.config):
+
+#### Prokaryote
+
+**Bakta**
+Requires Bakta database version 6. 
+Download from [Zenodo](https://zenodo.org/records/14916843), extract, and provide the absolute path using:
+`--bakta_db_dir /absolute/path/to/bakta/db`
+
+**EggNog Mapper**
+Requires Eggnog database files.
+Download both mmseqs.tar.gz and eggnog.db.gz fom [EggNog](https://eggnogdb.org/download/emapperdb-5.0.2/) (as recommended for genome assemblies), extract, and provide the absolute path using:
+`--eggnog_db_dir /absolute/path/to/eggnog/db`
+
+**PGAP**
+Requires a local PGAP installation (including its databases and container images). Follow the official Quick Start to install PGAP and download required data: https://github.com/ncbi/pgap/wiki/Quick-Start. Once installed, provide the absolute installation path with:
+`--pgap_dir /absolute/path/to/pgap`
+
+#### Eukaryote
+
+- `params.ips_data_dir` for InterProScan data
+- `params.emapper_data_dir` for eggNOG data
+- KofamScan databases should be placed: `data/database/kofamscan/`
+
+#### Run command
+Here have tre possibilities: run: eukaryote or prokaryote or run all
+**Only Eukaryote**
+```bash
+nextflow run main.nf -entry eukaryotes_annot
+```
+**Only Procaryote**
+```
+nextflow run main.nf --bakta_db_dir /absolute/path/to/bakta/db --eggnog_db_dir /absolute/path/to/eggnog/db --pgap_dir /absolute/path/to/pgap
+```
+**Run all**
+nextflow run main.nf
+
+### Requirements
+
+- [Nextflow](https://www.nextflow.io/)
+- [Docker](https://www.docker.com/)
+- Databases downloaded locally for InterProScan, KofamScan, and eggNOG-mapper
+- Input genome files in FASTA format (`.fna`) placed in the `data/` directory
+
+### Outputs
+For prokaryotes:
+- Per-sample annotation directories under `results/module/sample_module/`, where `module` is the tool used and `sample` is the genome used.
+
+### Documentation
+- eggNOG-mapper: [docs/egg.md](docs/egg.md)
+- InterProScan: [docs/interproscan.md](docs/interproscan.md)
+- KofamScan: [docs/KofamScan.md](docs/KofamScan.md)
+
+### Notes
+
+- Pipeline ensures reproducibility and scalability using Docker containers.
+- Additional tools for functional annotation (e.g., InterProScan, eggNOG-mapper, Funannotate) will be integrated in future updates.
+- All intermediate files remain in `work/`, while final structured results are under `results/`.
 
 ## Analysis workflow
 
@@ -92,46 +197,3 @@ The eukaryotic workflow is the validated active path. The prokaryotic
 notebooks have not been changed in this refactor; correctness and
 reproducibility priorities for a future pass are listed in
 [`analysis_benchannot/docs/prokaryotic-roadmap.md`](analysis_benchannot/docs/prokaryotic-roadmap.md).
-
-## Nextflow pipeline
-
-Orchestrates annotation tools and produces reproducible results for
-benchmarking and downstream analysis.
-
-### Inputs
-
-Place FASTA files (`.fna`) in the `data/` directory.
-
-### Run
-
-```bash
-nextflow run main.nf --bakta_db_dir path/to/bakta/db
-```
-
-Bakta requires a specific database (version 6), downloadable
-[here](https://zenodo.org/records/14916843). After downloading and extracting,
-provide the path with `--bakta_db_dir`.
-
-### Outputs
-
-- Annotated results for each genome are stored in the `results/` directory.
-- Intermediate files are stored in the `work/` directory.
-
-### Modules
-
-- `modules/prokka.nf` — Prokka 1.14.6 ([GitHub](https://github.com/tseemann/prokka), [Docker Image](https://hub.docker.com/r/staphb/prokka))
-- `modules/bakta.nf` — Bakta 1.11.3 ([GitHub](https://github.com/oschwengers/bakta), [Docker Image](https://hub.docker.com/r/oschwengers/bakta))
-- `modules/gffread.nf` — processes GFF/GTF files (e.g., extracting transcript sequences)
-- `modules/kofamscan.nf` — assigns KEGG Orthologs using HMM profiles
-
-### Requirements
-
-- [Nextflow](https://www.nextflow.io/)
-- [Docker](https://www.docker.com/)
-- Input genome files in FASTA format (`.fna`) placed in the `data/` directory
-
-### Notes
-
-- Pipeline ensures reproducibility and scalability using Docker containers.
-- Additional tools for functional annotation (e.g., InterProScan, eggNOG-mapper, Funannotate) will be integrated in future updates.
-- All intermediate files remain in `work/`, while final structured results are under `results/`.

@@ -10,14 +10,14 @@ KofamScan is a tool for functional annotation that assigns KEGG Orthologs (KOs) 
   - `profiles/` → HMM profiles for KO assignments  
   - `ko_list` → KO ID definitions
 
-In this pipeline, the database is expected to be located at:  
-data/eukaryotes/db/
+In this pipeline, the database is expected to be located at:
+`data/eukaryotes/db/kofamscan/`
 
 ## Output
 
 - Tab-delimited results with KO assignments for each input proteome.  
-- Example output file: 
-results/kofamscan/<sample>_ko.txt
+- Example output file:
+`results/eukaryotes/kofamscan/<sample>.kofam.txt`
 The output contains:
 - Query sequence ID
 - Assigned KO number
@@ -38,9 +38,9 @@ drosophila_melanogaster.faa
 
 ## Integration in Pipeline
 
-Module definition: modules/KofamScan.nf
+Module definition: `modules/KofamScan.nf`
 Results are automatically stored under:
-results/kofamscan/
+`results/eukaryotes/kofamscan/`
 
 ## Database Setup
 
@@ -48,15 +48,15 @@ Before running, download the KEGG HMM profiles:
 wget ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
 wget ftp://ftp.genome.jp/pub/db/kofam/ko_list.gz
 
-tar -xzf profiles.tar.gz -C data/eukaryotes/db/
-gunzip ko_list.gz -c > data/eukaryotes/db/ko_list
+tar -xzf profiles.tar.gz -C data/eukaryotes/db/kofamscan/
+gunzip ko_list.gz -c > data/eukaryotes/db/kofamscan/ko_list
 
 Ensure that:
 
-profiles/ directory contains all .hmm files
-ko_list file is in the same db/ folder
+- `profiles/` contains all `.hmm` files
+- `ko_list` is in the same `kofamscan/` directory
 
 ## Notes
 - KofamScan uses adaptive score thresholds for higher accuracy compared to fixed E-values.
-- The module is configured to run in a Docker container for reproducibility.
-- Input proteins can come from Prokka or GFFREAD outputs.
+- The module runs inside a container for reproducibility.
+- Input proteins typically come from GFFREAD outputs in this pipeline.

@@ -30,7 +30,7 @@ All cleaned tool tables must contain exactly `RNA_ID` and the tool's
 description column, with unique non-empty `RNA_ID` values. Tool IDs not present
 in the reference are rejected rather than silently dropped.
 
-The cleaning summary distinguishes the three plotted processing stages:
+The cleaning summary distinguishes three cumulative processing counts:
 
 - `gffread_input_rna_ids`: unique non-mitochondrial IDs in the GFFread FASTA
   supplied to tools;
@@ -41,9 +41,10 @@ The cleaning summary distinguishes the three plotted processing stages:
 - `represented_loci`: unique reference `locus_tag` values represented by the
   retained IDs.
 
-The figure plots only `gffread_input_rna_ids`, `tool_identified_rna_ids`, and
-`retained_rna_ids`. Raw hit-row counts remain available in the TSV audit but are
-not plotted because tools emit different numbers of evidence rows per RNA_ID.
+The figure converts these cumulative counts into one stacked bar with three
+mutually exclusive segments: not identified, identified but not retained, and
+retained. Raw hit-row counts remain available in the TSV audit but are not
+plotted because tools emit different numbers of evidence rows per RNA_ID.
 
 ## Combined functional table
 
