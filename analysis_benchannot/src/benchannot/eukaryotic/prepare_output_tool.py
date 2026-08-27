@@ -360,7 +360,7 @@ def save_table(table: pd.DataFrame, path: Path, *, index: bool = False) -> None:
 
 
 def plot_cleaning_summary(summary: pd.DataFrame, output_path: Path) -> None:
-    """Save a four-tool by two-species three-stage RNA_ID figure."""
+    """Save a four-tool by two-species stacked RNA_ID processing figure."""
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
 
@@ -390,17 +390,36 @@ def plot_cleaning_summary(summary: pd.DataFrame, output_path: Path) -> None:
             organism = organism_row["organism"]
             row = indexed.loc[(organism, source)]
             ax = axes[row_index, column_index]
-            metrics = [
-                "gffread_input_rna_ids",
-                "tool_identified_rna_ids",
-                "retained_rna_ids",
+            input_count = int(row["gffread_input_rna_ids"])
+            identified_count = int(row["tool_identified_rna_ids"])
+            retained_count = int(row["retained_rna_ids"])
+            not_identified = input_count - identified_count
+            identified_not_retained = identified_count - retained_count
+            if min(not_identified, identified_not_retained, retained_count) < 0:
+                raise ValueError(
+                    f"Invalid processing counts for {organism}/{source}: "
+                    f"input={input_count}, identified={identified_count}, "
+                    f"retained={retained_count}"
+                )
+            segments = [not_identified, identified_not_retained, retained_count]
+            labels = [
+                "Not\nidentified",
+                "Identified but\nnot retained",
+                "Retained\nRNA_ID",
             ]
-            labels = ["GFFread\ninput", "Tool\nidentified", "Retained\nRNA_ID"]
-            values = [int(row[metric]) for metric in metrics]
-            bars = ax.bar(range(len(metrics)), values, color=colors)
-            ax.bar_label(bars, labels=[f"{value:,}" for value in values], fontsize=8)
-            ax.set_xticks(range(len(metrics)), labels, fontsize=8)
-            ax.set_ylim(0, max(values) * 1.32)
+            bottom = 0
+            for value, color in zip(segments, colors, strict=True):
+                bar = ax.bar([0], [value], bottom=bottom, color=color, width=0.15)
+                if value:
+                    ax.bar_label(
+                        bar,
+                        labels=[f"{value:,}"],
+                        label_type="center",
+                        fontsize=8,
+                    )
+                bottom += value
+            ax.set_xticks([0], ["GFFread input\nRNA_ID"], fontsize=8)
+            ax.set_ylim(0, input_count * 1.25)
             ax.text(
                 0.01,
                 0.97,
@@ -419,8 +438,8 @@ def plot_cleaning_summary(summary: pd.DataFrame, output_path: Path) -> None:
             else:
                 ax.set_ylabel("Exact count", fontsize=9)
     legend = [
-        Patch(color=colors[0], label="GFFread input RNA_ID"),
-        Patch(color=colors[1], label="Tool identified RNA_ID"),
+        Patch(color=colors[0], label="Not identified by tool"),
+        Patch(color=colors[1], label="Identified but not retained"),
         Patch(color=colors[2], label="Retained RNA_ID"),
     ]
     fig.legend(

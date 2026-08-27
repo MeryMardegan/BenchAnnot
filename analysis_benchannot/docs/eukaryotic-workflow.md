@@ -68,11 +68,12 @@ exported membership tables keep the fixed source-column order.
 
 The cleaning summary is a 4-by-2 panel grid: tools are rows, *S. cerevisiae*
 is the first column, and *D. melanogaster* is the second. Every panel uses its
-own count scale and has three stages: GFFread input RNA_ID, tool-identified
-RNA_ID after mitochondrial removal, and retained RNA_ID after the tool-specific
-selection and exact reference match. The exact selection rule is shown in the
-panel text. `represented_loci` remains available in the summary table for the
-Drosophila locus-level audit but is not mixed into the RNA_ID plot.
+own count scale and has one stacked bar partitioning the GFFread input into
+RNA_IDs not identified, identified but not retained, and retained after the
+tool-specific selection and exact reference match. The exact selection rule is
+shown in the panel text. `represented_loci` remains available in the summary
+table for the Drosophila locus-level audit but is not mixed into the RNA_ID
+plot.
 
 ### 3. Analyze functional annotations
 
