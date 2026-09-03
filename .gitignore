@@ -23,7 +23,7 @@ __pycache__/
 !/data/genome_prokaryote/.gitkeep
 
 # Original tool outputs are local benchmark data. Keep only directory markers.
-/data/origin/*
+/data/origin/**
 !/data/origin/**/
 !/data/origin/**/.gitkeep
 
