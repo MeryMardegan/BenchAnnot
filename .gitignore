@@ -1,22 +1,18 @@
 __pycache__/
 *.pyc
 *.egg-info/
-*.tsv
-*.xlsx
-*.xls
 .opencode/
 **/2_run/output/
 **/2_run/tmp/
 .venv/
 .vscode/
 
-# Large data files
-*.gz
-*.zip
-databases/
+# Data files are intentionally versionable. Git tracks files, not empty
+# directories; add a .gitkeep file when an empty directory must be preserved.
 
-# Heavy results
-results/
+# Ignore only generated top-level directories, not project data directories.
+/databases/
+/results/
 *.out
 *.log
 
