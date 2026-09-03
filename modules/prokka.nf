@@ -1,19 +1,25 @@
-#!usr/bin/env nextflow
+#!/usr/bin/env nextflow
 
 process PROKKA {
     label 'prokka'
-    container "https://depot.galaxyproject.org/singularity/prokka%3A1.14.6--pl5321hdfd78af_5"
-    publishDir "data/reproduced/prokaryote_output_tools/prokka", mode: 'copy'
+    tag "Prokka annotation for ${sample_id}"
+    publishDir "${params.outdir}/prokaryote_output_tools/prokka", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
+    tuple val (sample_id), path(fasta_file)
 
+    output:
+    tuple val (sample_id), path("results/${sample_id}.*"), emit: results
 
     script:
     """
+    set -euo pipefail
+
     prokka \
-    --outdir ${fasta_file.baseName} \
-    --prefix ${fasta_file.baseName} ${fasta_file} \
-    --cpus ${task.cpus} \
-    --compliant
+        --outdir results \
+        --prefix ${sample_id} \
+        --cpus ${task.cpus} \
+        --compliant \
+        ${fasta_file}
     """
 }

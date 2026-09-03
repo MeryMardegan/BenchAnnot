@@ -2,20 +2,27 @@
 
 process BAKTA {
     label 'bakta'
-    container 'oschwengers/bakta:v1.11.3'
-    publishDir "data/reproduced/prokaryote_output_tools/bakta", mode: 'copy'
-    
+    tag "Bakta annotation for ${sample_id}"
+    publishDir "${params.outdir}/prokaryote_output_tools/bakta", mode: 'copy'
+
     input:
-    path fasta_file
-    
+    tuple val (sample_id), path(fasta_file)
+    path bakta_db
+
+    output:
+    tuple val (sample_id), path("results/${sample_id}.*"), emit: results
+
     script:
     """
+    set -euo pipefail
+
     bakta \
-    --db ${bakta_db_dir} \
-    --output ${fasta_file.baseName} \
-    --prefix ${fasta_file.baseName} ${fasta_file} \
-    -t ${task.cpus} \
-    --skip-plot \
-    --compliant
+        --db /database \
+        --output results \
+        --prefix ${sample_id} \
+        --threads ${task.cpus} \
+        --skip-plot \
+        --compliant \
+        ${fasta_file}
     """
 }

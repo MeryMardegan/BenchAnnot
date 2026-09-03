@@ -1,29 +1,31 @@
 process INTERPROSCAN {
     label 'interproscan'
-    tag "$sample_id"
-    publishDir "results/eukaryotes/interproscan", mode: 'copy', pattern: "${sample_id}.*"
+    tag "InterProScan annotation for $sample_id"
+    publishDir "data/reproduced/eukaryote_output_tools/interproscan", mode: 'copy'
 
     input:
     // Input comes from GFFREAD: tuple(val(sample_id), path("${sample_id}.faa")).
     tuple val(sample_id), path(faa)
+    path ips_db
 
     output:
     // Standardize output names to a stable module prefix.
     tuple val(sample_id),
-          path ("${sample_id}.interpro.*")
+          path ("${sample_id}.interpro.*"),
+          emit: results
 
     script:
     def outbase = "${sample_id}.interpro"
-    def inputFa = faa
     def fmt = (params.ips_formats ?: 'tsv,gff3')
 
     """
     set -euo pipefail
     # Keep temporary files scoped to the task directory.
+
     mkdir -p temp
 
     /opt/interproscan/interproscan.sh \
-      -i ${inputFa} \
+      -i ${faa} \
       -f ${fmt} \
       -cpu ${task.cpus} \
       -goterms \
@@ -32,3 +34,4 @@ process INTERPROSCAN {
       -b ${outbase} \
       --tempdir temp
     """
+}

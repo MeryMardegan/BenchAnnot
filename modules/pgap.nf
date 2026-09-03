@@ -2,29 +2,37 @@
 
 process PGAP {
 label "pgap"
+tag "PGAP annotation for ${sample_id}"
 publishDir "data/reproduced/prokaryote_output_tools/pgap", mode: 'copy'
 
 input:
-path fasta_file
-val pgap_dir
+tuple val(sample_id),
+      path(fasta_file),
+      val(species)
 
+val pgap_dir
+val pgap_container
 
 output:
-path "${fasta_file.baseName}_pgap"
+tuple val(sample_id),
+      path("${sample_id}_pgap"),
+      emit: results
 
 script:
 """
+set -euo pipefail
+
 export PGAP_INPUT_DIR=${pgap_dir}
-echo \${PGAP_INPUT_DIR}
+
 \${PGAP_INPUT_DIR}/pgap.py \
 -n \
 -g ${fasta_file} \
--s "Mycoplasmoides genitalium" \
+-s "${species}" \
 --taxcheck \
 --auto-correct-tax \
--o ${fasta_file.baseName} \
+-o ${sample_id}_pgap \
 -D singularity \
---container-path ${pgap_dir}/pgap_2025-05-06.build7983.sif \
+--container-path ${pgap_container} \
 --no-internet
 
 """

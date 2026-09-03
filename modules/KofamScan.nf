@@ -1,26 +1,27 @@
 process KOFAMSCAN {
     label 'kofamscan'
-    tag "$sample_id"
-    publishDir "results/eukaryotes/kofamscan", mode: 'copy', pattern: "${sample_id}.kofam.*"
+    tag "KofamScan annotation for $sample_id"
+    publishDir "/data/reproduced/eukaryote_output_tools/kofamscan", mode: 'copy'
 
     input:
     tuple val(sample_id), path(proteins)
-    path (profiles)
-    path (ko_list)
+
+    path kofam_db
 
     output:
-    path "${sample_id}.kofam.txt"
+    tuple val(sample_id), path("${sample_id}.kofam.txt"), emit: results
 
     script:
     """
-    # Run KO assignment using the provided profile and KO list databases.
+    set -euo pipefail
+
     /usr/local/bin/exec_annotation \
       --cpu ${task.cpus} \
-      --profile ${profiles} \
-      --ko-list ${ko_list} \
+      --profile /database/profiles \
+      --ko-list /database/ko_list \
       -f detail-tsv \
-      -f mapper-one-line \
       --report-unannotated \
       ${proteins} \
       -o ${sample_id}.kofam.txt
     """
+}
