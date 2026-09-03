@@ -16,6 +16,17 @@ __pycache__/
 *.out
 *.log
 
+# Large local reference genomes are not committed.
+/data/genome_eukaryote/*
+!/data/genome_eukaryote/.gitkeep
+/data/genome_prokaryote/*
+!/data/genome_prokaryote/.gitkeep
+
+# Original tool outputs are local benchmark data. Keep only directory markers.
+/data/origin/*
+!/data/origin/**/
+!/data/origin/**/.gitkeep
+
 # Environments
 .env
 *.Rhistory
