@@ -4,6 +4,8 @@ nextflow.enable.dsl=2
 
 include { PROKARYOTE_INPUTS; EUKARYOTE_INPUTS } from './workflows/input.nf'
 include { RESOLVE_EGGNOG_DB } from './workflows/eggnog_database.nf'
+include { RESOLVE_BAKTA_DB } from './workflows/bakta_database.nf'
+include { RESOLVE_PGAP } from './workflows/pgap_database.nf'
 include { PROKARYOTE_ANNOTATION } from './workflows/prokaryote.nf'
 include { EUKARYOTE_ANNOTATION }  from './workflows/eukaryote.nf'
 
@@ -45,13 +47,16 @@ workflow {
     if (params.annotation_type in ['prokaryote', 'both']) {
 
         PROKARYOTE_INPUTS()
+        RESOLVE_BAKTA_DB()
+        RESOLVE_PGAP()
 
         PROKARYOTE_ANNOTATION(
             PROKARYOTE_INPUTS.out.samples,
-            PROKARYOTE_INPUTS.out.bakta_db,
+            RESOLVE_BAKTA_DB.out.database,
             RESOLVE_EGGNOG_DB.out.database,
-            PROKARYOTE_INPUTS.out.pgap_dir,
-            PROKARYOTE_INPUTS.out.pgap_container
+            RESOLVE_PGAP.out.pgap_python,
+            RESOLVE_PGAP.out.pgap_dir,
+            RESOLVE_PGAP.out.pgap_container
         )
     }
 

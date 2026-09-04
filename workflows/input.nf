@@ -4,7 +4,6 @@ include {
     validateProkaryoteRow;
     validateEukaryoteRow;
     validateBaktaInputs;
-    validatePgapInputs;
     validateKofamInputs;
     validateInterproscanInputs
 } from '../lib/validation.nf'
@@ -13,14 +12,6 @@ include {
 workflow PROKARYOTE_INPUTS {
 
     main:
-
-    /*
-     * Validate external resources required by the prokaryotic workflow.
-     * eggNOG is resolved separately by RESOLVE_EGGNOG_DB.
-     */
-    validateBaktaInputs()
-    validatePgapInputs()
-
     /*
      * validateProkaryoteRow() returns:
      * tuple(sample_id, genome_fasta, species, taxid, genetic_code)
@@ -35,30 +26,9 @@ workflow PROKARYOTE_INPUTS {
             validateProkaryoteRow(row)
         }
 
-    /*
-     * Bakta DB is now a SquashFS image.
-     */
-    bakta_db_ch = channel.value(
-        file(params.bakta_db)
-    )
-
-    /*
-     * PGAP remains an external installation directory
-     * plus its container image.
-     */
-    pgap_dir_ch = channel.value(
-        file(params.pgap_dir)
-    )
-
-    pgap_container_ch = channel.value(
-        params.pgap_container
-    )
 
     emit:
     samples        = samples_ch
-    bakta_db       = bakta_db_ch
-    pgap_dir       = pgap_dir_ch
-    pgap_container = pgap_container_ch
 }
 
 
