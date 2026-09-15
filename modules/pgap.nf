@@ -16,11 +16,19 @@ process PREPARE_PGAP_PYTHON {
     set -euo pipefail
 
     RUNTIME="${runtime_dir}"
-    MAMBA_ROOT="/data/runtime/micromamba"
+    RUNTIME_ROOT=\$(dirname "\$RUNTIME")
+    MAMBA_ROOT="\$RUNTIME_ROOT/micromamba"
     BOOTSTRAP="\$PWD/micromamba-bootstrap"
+    RUNTIME_TMP="\$RUNTIME_ROOT/tmp"
 
-    mkdir -p "/data/runtime"
+    mkdir -p "\$RUNTIME_ROOT"
     mkdir -p "\$BOOTSTRAP"
+    mkdir -p "\$MAMBA_ROOT"
+    mkdir -p "\$RUNTIME_TMP"
+
+    export TMPDIR="\$RUNTIME_TMP"
+    export MAMBA_ROOT_PREFIX="\$MAMBA_ROOT"
+
 
     # If a valid runtime already exists, reuse it.
     if [ -x "\$RUNTIME/bin/python" ]; then
@@ -95,40 +103,39 @@ process PREPARE_PGAP {
 }
 
 process PGAP {
-label "pgap"
-tag "PGAP annotation for ${sample_id}"
-publishDir "data/reproduced/prokaryote_output_tools/pgap", mode: 'copy'
+    label "pgap"
+    tag "PGAP annotation for ${sample_id}"
+    publishDir "data/reproduced/prokaryote_output_tools/pgap", mode: 'copy'
 
-input:
-tuple val(sample_id),
-      path(fasta_file),
-      val(species)
+    input:
+    tuple val(sample_id), path(fasta_file), val(species)
 
-val pgap_dir
-val pgap_container
-val pgap_python_dir
+    val pgap_dir
+    val pgap_container
+    val pgap_python_dir
 
-output:
-tuple val(sample_id),
+    output:
+    tuple val(sample_id),
       path("${sample_id}_pgap"),
       emit: results
 
-script:
-"""
-set -euo pipefail
+    script:
+    """
+    set -euo pipefail
 
-export PGAP_INPUT_DIR=${pgap_dir}
+    export PGAP_INPUT_DIR="${pgap_dir}"
 
-\${PGAP_INPUT_DIR}/pgap.py \
--n \
--g ${fasta_file} \
--s "${species}" \
---taxcheck \
---auto-correct-tax \
--o ${sample_id}_pgap \
--D singularity \
---container-path ${pgap_container} \
---no-internet
-
-"""
+     
+    "${pgap_python_dir}/bin/python" \
+	"${pgap_dir}/pgap.py" \
+	-n \
+	-g ${fasta_file} \
+	-s "${species}" \
+	--taxcheck \
+	--auto-correct-tax \
+	-o ${sample_id}_pgap \
+	-D singularity \
+	--container-path "${pgap_container}" \
+	--no-internet
+     """
 }

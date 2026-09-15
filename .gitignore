@@ -34,3 +34,22 @@ __pycache__/
 # Nextflow
 work/
 .nextflow
+
+# Nextflow runtime files
+.nextflow*
+*.pid
+
+# Local container cache
+/apptainer_cache/
+
+# Generated pipeline resources
+/data/database/
+/data/runtime/
+/data/reproduced/
+
+# Editor / temporary backups
+*.save
+
+# Local tests
+/teste.sqsh
+/teste_db/

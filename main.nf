@@ -54,9 +54,9 @@ workflow {
             PROKARYOTE_INPUTS.out.samples,
             RESOLVE_BAKTA_DB.out.database,
             RESOLVE_EGGNOG_DB.out.database,
-            RESOLVE_PGAP.out.pgap_python,
             RESOLVE_PGAP.out.pgap_dir,
-            RESOLVE_PGAP.out.pgap_container
+            RESOLVE_PGAP.out.pgap_container,
+            RESOLVE_PGAP.out.pgap_python
         )
     }
 

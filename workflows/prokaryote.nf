@@ -25,14 +25,10 @@ workflow PROKARYOTE_ANNOTATION {
 
         bakta: tuple(
             sample_id,
-            genome_fasta,
-            species,
-            taxid,
-            genetic_code
+            genome_fasta
         )
 
         eggnog: tuple(
-            sample_id,
             genome_fasta
         )
 

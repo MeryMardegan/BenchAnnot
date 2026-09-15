@@ -29,6 +29,37 @@ def databaseImageIsValid(String imagePath) {
            image.name.endsWith('.sqsh')
 }
 
+def managedDatabaseImageIsValid(String imagePath) {
+
+    if (!databaseImageIsValid(imagePath)) {
+        return false
+    }
+
+    def image = file(imagePath)
+    def sizeManifest = file("${imagePath}.size")
+
+    if (!sizeManifest.exists() ||
+        !sizeManifest.isFile() ||
+        sizeManifest.size() <= 0) {
+
+        return false
+    }
+
+    try {
+
+        def expectedSize = java.nio.file.Files
+            .readString(sizeManifest)
+            .trim()
+            .toLong()
+
+        return image.size() == expectedSize
+
+    } catch (Exception ignored) {
+
+        return false
+    }
+}
+
 // ============================================================
 // Resolve the path to a samplesheet file.
 // If the path is absolute, use it as is. Otherwise, resolve it relative to the project directory.

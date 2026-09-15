@@ -15,6 +15,10 @@ process PROKKA {
     """
     set -euo pipefail
 
+    mkdir -p tmp
+
+    export TMPDIR="\$PWD/tmp"
+
     prokka \
         --outdir results \
         --prefix ${sample_id} \
