@@ -118,26 +118,30 @@ process EGGNOG_EUKARYOTE {
     path eggnog_db
 
     output:
-    path("${sample_id}_eggnog.emmaper.*"), emit: eggnog_results
+    tuple val(sample_id), path ("${sample_id}_eggnog/*"), emit: eggnog_results
 
     script:
     """
     set -euo pipefail
     # Activate the container's environment for eggNOG-mapper.
     export MAMBA_SKIP_ACTIVATE=""
+    export EGGNOG_DATA_DIR=/database
     export NXT_TASK_MONITOR=0
-    source /usr/local/bin/_activate_current_env.sh
 
     # Use a local temp directory to avoid polluting the work directory
     mkdir -p tmp
+    mkdir -p ${sample_id}_eggnog
+
+    source /usr/local/bin/_activate_current_env.sh
 
     emapper.py \
         -i ${proteins} \
         --itype proteins \
-        -o ${sample_id}_eggnog \
         -m mmseqs \
         --cpu ${task.cpus} \
-        --data_dir ${eggnog_db} \
+        --data_dir /database \
+	--output ${sample_id} \
+	--output_dir ${sample_id}_eggnog \
         --temp_dir ./tmp
         """
 }

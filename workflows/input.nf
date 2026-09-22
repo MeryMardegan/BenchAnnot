@@ -4,8 +4,6 @@ include {
     validateProkaryoteRow;
     validateEukaryoteRow;
     validateBaktaInputs;
-    validateKofamInputs;
-    validateInterproscanInputs
 } from '../lib/validation.nf'
 
 
@@ -35,14 +33,6 @@ workflow PROKARYOTE_INPUTS {
 workflow EUKARYOTE_INPUTS {
 
     main:
-
-    /*
-     * Validate external resources required by the eukaryotic workflow.
-     * eggNOG is resolved separately by RESOLVE_EGGNOG_DB.
-     */
-    validateKofamInputs()
-    validateInterproscanInputs()
-
     /*
      * validateEukaryoteRow() returns:
      * tuple(
@@ -63,19 +53,6 @@ workflow EUKARYOTE_INPUTS {
             validateEukaryoteRow(row)
         }
 
-    /*
-     * Databases are provided as SquashFS images.
-     */
-    kofam_db_ch = channel.value(
-        file(params.kofamscan_db)
-    )
-
-    ips_db_ch = channel.value(
-        file(params.ips_db)
-    )
-
     emit:
     samples  = samples_ch
-    kofam_db = kofam_db_ch
-    ips_db   = ips_db_ch
 }

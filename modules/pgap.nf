@@ -5,6 +5,8 @@ process PREPARE_PGAP_PYTHON {
     label 'pgap_python_prepare'
     tag "Python ${params.pgap_python_version} for PGAP"
 
+    publishDir "${projectDir}/data/database", mode: 'copy'
+
     input:
     val runtime_dir
 
@@ -65,6 +67,8 @@ process PREPARE_PGAP {
     label 'pgap_prepare'
     tag "PGAP ${params.pgap_version}"
 
+    publishDir "${projectDir}/data/database", mode: 'copy', overwrite: true
+
     input:
     val pgap_python_dir
 
@@ -74,8 +78,6 @@ process PREPARE_PGAP {
     script:
     """
     set -euo pipefail
-
-    mkdir -p pgap
 
     mkdir -p pgap
 

@@ -6,8 +6,10 @@ include { PROKARYOTE_INPUTS; EUKARYOTE_INPUTS } from './workflows/input.nf'
 include { RESOLVE_EGGNOG_DB } from './workflows/eggnog_database.nf'
 include { RESOLVE_BAKTA_DB } from './workflows/bakta_database.nf'
 include { RESOLVE_PGAP } from './workflows/pgap_database.nf'
+include { RESOLVE_KOFAM_DB } from './workflows/kofam_database.nf'
 include { PROKARYOTE_ANNOTATION } from './workflows/prokaryote.nf'
 include { EUKARYOTE_ANNOTATION }  from './workflows/eukaryote.nf'
+include { RESOLVE_INTERPROSCAN_DB } from './workflows/interproscan_database.nf'
 
 workflow {
 
@@ -68,11 +70,13 @@ workflow {
     if (params.annotation_type in ['eukaryote', 'both']) {
 
         EUKARYOTE_INPUTS()
+	RESOLVE_KOFAM_DB()
+	RESOLVE_INTERPROSCAN_DB()
 
         EUKARYOTE_ANNOTATION(
             EUKARYOTE_INPUTS.out.samples,
-            EUKARYOTE_INPUTS.out.kofam_db,
-            EUKARYOTE_INPUTS.out.ips_db,
+            RESOLVE_KOFAM_DB.out.database,
+	    RESOLVE_INTERPROSCAN_DB.out.database,
             RESOLVE_EGGNOG_DB.out.database
         )
     }

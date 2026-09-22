@@ -146,14 +146,6 @@ def validateBaktaInputs() {
     validateRequiredFiles(['bakta_db'])
 }
 
-def validateKofamInputs() {
-    validateRequiredDirs(['kofamscan_db'])
-}
-
-def validateInterproscanInputs() {
-    validateRequiredFiles(['ips_data_dir'])
-}
-
 def validatePgapInputs() {
     validateRequiredDirs(['pgap_dir'])
     validateRequiredFiles(['pgap_container'])
