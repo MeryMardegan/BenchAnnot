@@ -65,13 +65,11 @@ process PREPARE_EGGNOG {
      fi
      """
    }
-}
-
 
 process EGGNOG_PROKARYOTE {
     label "eggnog_mapper_v2"
     tag "${fasta_file.baseName}"
-    publishDir "data/reproduced/prokaryote_output_tools/eggnog", mode: 'copy'
+    publishDir "${params.outdir}/prokaryote_output_tools/eggnog", mode: 'copy'
 
     input:
     path fasta_file
@@ -111,7 +109,7 @@ process EGGNOG_PROKARYOTE {
 process EGGNOG_EUKARYOTE {
     label "eggnog_mapper_v2"
     tag "$sample_id"
-    publishDir "data/reproduced/eukaryote_output_tools/eggnog", mode: 'copy'
+    publishDir "${params.outdir}/eukaryote_output_tools/eggnog", mode: 'copy'
 
     input:
     tuple val(sample_id), path(proteins)

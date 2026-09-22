@@ -51,7 +51,7 @@ workflow RESOLVE_KOFAM_DB {
         )
 
         kofam_db_ch = packed.database.map {
-            database_name, database_image ->
+            _database_name, database_image ->
                 database_image
         }
     }

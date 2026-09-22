@@ -158,6 +158,37 @@ def select_first_reference_transcript(transcript_table: pd.DataFrame) -> pd.Data
     )
 
 
+def select_first_submitted_transcript(
+    transcript_table: pd.DataFrame, submitted_rna_ids: set[str]
+) -> pd.DataFrame:
+    """Select the first reference-ordered submitted transcript at each locus."""
+    if not submitted_rna_ids:
+        raise ValueError("submitted_rna_ids must not be empty")
+    submitted = transcript_table[
+        transcript_table["RNA_ID"].isin(submitted_rna_ids)
+    ].copy()
+    return select_first_reference_transcript(submitted)
+
+
+def select_common_tool_hits(
+    annotation_table: pd.DataFrame, tools: Sequence[str]
+) -> pd.DataFrame:
+    """Keep records with a retained hit from every requested tool."""
+    returned_columns = [f"{tool}_returned" for tool in tools]
+    missing = set(returned_columns) - set(annotation_table.columns)
+    if missing:
+        raise ValueError(f"Annotation table is missing columns: {sorted(missing)}")
+    invalid = {
+        column: sorted(annotation_table[column].dropna().unique().tolist())
+        for column in returned_columns
+        if not annotation_table[column].dropna().isin([True, False]).all()
+    }
+    if invalid:
+        raise ValueError(f"Returned-hit columns must be Boolean: {invalid}")
+    common_mask = annotation_table[returned_columns].eq(True).all(axis=1)
+    return annotation_table.loc[common_mask].reset_index(drop=True).copy()
+
+
 def categorize_functional_shifts(
     annotation_table: pd.DataFrame,
     tools: Sequence[str],
@@ -304,6 +335,131 @@ def plot_functional_shifts(
         frameon=False,
     )
     figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    plt.show()
+    plt.close(figure)
+
+
+def plot_functional_shift_panels(
+    panel_summaries: Mapping[str, pd.DataFrame],
+    title: str,
+    output_path: Path,
+    count_label: str,
+) -> None:
+    """Save two prokaryotic-style functional-shift panels in one figure."""
+    if len(panel_summaries) != 2:
+        raise ValueError("Functional comparison figure requires exactly two panels")
+
+    figure, axes = plt.subplots(2, 1, figsize=(10, 12))
+    figure.subplots_adjust(top=0.84, hspace=0.42)
+    for axis, (panel_title, summary) in zip(
+        axes, panel_summaries.items(), strict=True
+    ):
+        totals = summary.sum(axis=1)
+        if totals.nunique() != 1:
+            raise ValueError("Every source must be evaluated against the same universe")
+        total = int(totals.iloc[0])
+        plot_table = summary.copy()
+        plot_table["Over-Annotation"] *= -1
+        plot_table["Under-Annotation"] *= -1
+
+        over_bars = axis.barh(
+            plot_table.index,
+            plot_table["Over-Annotation"],
+            color=FUNCTIONAL_SHIFT_COLORS["Over-Annotation"],
+            label="Over-Annotation",
+        )
+        under_bars = axis.barh(
+            plot_table.index,
+            plot_table["Under-Annotation"],
+            left=plot_table["Over-Annotation"],
+            color=FUNCTIONAL_SHIFT_COLORS["Under-Annotation"],
+            label="Under-Annotation",
+        )
+        informative_bars = axis.barh(
+            plot_table.index,
+            plot_table["Both Informative"],
+            color=FUNCTIONAL_SHIFT_COLORS["Both Informative"],
+            label="Agreement (Informative)",
+        )
+        noninformative_bars = axis.barh(
+            plot_table.index,
+            plot_table["Both Hypothetical"],
+            left=plot_table["Both Informative"],
+            color=FUNCTIONAL_SHIFT_COLORS["Both Hypothetical"],
+            label="Agreement (Non-informative)",
+        )
+        axis.axvline(
+            0, color="black", linewidth=1, linestyle="--", ymax=0.96, ymin=0.04
+        )
+        for spine in axis.spines.values():
+            spine.set_visible(False)
+        containers = (
+            ("Over-Annotation", over_bars),
+            ("Under-Annotation", under_bars),
+            ("Both Informative", informative_bars),
+            ("Both Hypothetical", noninformative_bars),
+        )
+        for category, container in containers:
+            for bar, value in zip(container.patches, container.datavalues, strict=True):
+                if not value:
+                    continue
+                percentage = abs(value) / total * 100
+                if percentage >= 5:
+                    axis.text(
+                        bar.get_x() + bar.get_width() / 2,
+                        bar.get_y() + bar.get_height() / 2,
+                        f"{percentage:.1f}%",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        fontweight="bold",
+                    )
+                    continue
+
+                if category == "Under-Annotation":
+                    x = bar.get_x() + bar.get_width()
+                    offset = (-4, 0)
+                    alignment = "right"
+                elif category == "Over-Annotation":
+                    x = 0
+                    offset = (-4, 0)
+                    alignment = "right"
+                else:
+                    x = bar.get_x() + bar.get_width()
+                    offset = (4, 0)
+                    alignment = "left"
+                axis.annotate(
+                    f"{percentage:.1f}%",
+                    xy=(x, bar.get_y() + bar.get_height() / 2),
+                    xytext=offset,
+                    textcoords="offset points",
+                    ha=alignment,
+                    va="center",
+                    fontsize=7,
+                    fontweight="bold",
+                    clip_on=False,
+                )
+        axis.set_xlabel(f"{count_label} Count")
+        axis.set_ylabel("Annotation Tool")
+        axis.xaxis.set_major_formatter(
+            plt.FuncFormatter(lambda value, _: f"{int(abs(value))}")
+        )
+        axis.set_title(panel_title, fontsize=14)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    legend_order = [1, 0, 2, 3]
+    figure.legend(
+        [handles[index] for index in legend_order],
+        [labels[index] for index in legend_order],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.92),
+        ncol=4,
+        frameon=False,
+    )
+    figure.suptitle(title, fontsize=16, y=0.98)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")

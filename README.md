@@ -26,6 +26,12 @@ The pipeline pairs FASTA and GFF files by basename.
 
 ### Run
 
+#### How you can starts
+mkdir -p "$PWD/apptainer_cache/tmp"
+
+export SINGULARITY_TMPDIR="$PWD/apptainer_cache/tmp"
+export TMPDIR="$PWD/apptainer_cache/tmp"
+
 ```bash
 nextflow run main.nf --bakta_db_dir path/to/bakta/db
 ```

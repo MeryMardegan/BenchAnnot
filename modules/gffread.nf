@@ -1,7 +1,7 @@
 process GFFREAD {
   label 'gffread'
   tag "GFFread extraction for ${sample_id}"
-  publishDir "data/reproduced/eukaryote_output_tools/gffread", mode: 'copy'
+  publishDir "${params.outdir}/eukaryote_output_tools/gffread", mode: 'copy'
 
   input:
   tuple val(sample_id), path(fasta), path(anno)

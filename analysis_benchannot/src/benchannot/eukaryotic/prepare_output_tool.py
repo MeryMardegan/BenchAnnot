@@ -1,5 +1,6 @@
 import csv
 import warnings
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -481,6 +482,64 @@ def plot_rna_upset(membership: pd.DataFrame, title: str, output_path: Path) -> N
         warnings.filterwarnings("ignore", category=FutureWarning, module="upsetplot")
         upset.plot(fig=figure)
     figure.suptitle(title, fontsize=14, y=1.01)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    plt.close(figure)
+
+
+def plot_rna_upset_panels(
+    panel_memberships: dict[str, pd.DataFrame], title: str, output_path: Path
+) -> None:
+    """Save two fixed-style RNA_ID UpSet plots in one figure."""
+    import matplotlib.pyplot as plt
+    from upsetplot import UpSet, from_indicators
+
+    if len(panel_memberships) != 2:
+        raise ValueError("RNA_ID comparison figure requires exactly two panels")
+    panel_images = []
+    for panel_title, membership in panel_memberships.items():
+        if not membership.index.is_unique or membership.index.name != "RNA_ID":
+            raise ValueError("UpSet membership must have unique exact RNA_ID elements")
+        if tuple(membership.columns) != SOURCE_ORDER:
+            raise ValueError(f"UpSet source order must be {SOURCE_ORDER}")
+        upset_data = from_indicators(list(SOURCE_ORDER), membership)
+        upset = UpSet(
+            upset_data,
+            subset_size="count",
+            show_counts="%d",
+            sort_by="cardinality",
+            sort_categories_by="cardinality",
+            element_size=34,
+            facecolor="black",
+        )
+        panel_figure = plt.figure(figsize=(11, 7), facecolor="white")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning, module="upsetplot")
+            upset.plot(fig=panel_figure)
+        panel_figure.suptitle(panel_title, fontsize=14)
+
+        buffer = BytesIO()
+        panel_figure.savefig(
+            buffer, format="png", dpi=300, bbox_inches="tight", facecolor="white"
+        )
+        plt.close(panel_figure)
+        buffer.seek(0)
+        panel_images.append(plt.imread(buffer, format="png"))
+
+    figure, axes = plt.subplots(
+        2,
+        1,
+        figsize=(12, 14),
+        layout="constrained",
+        squeeze=False,
+        facecolor="white",
+    )
+    for axis, image in zip(axes.flat, panel_images, strict=True):
+        axis.imshow(image)
+        axis.axis("off")
+
+    figure.suptitle(title, fontsize=16)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")

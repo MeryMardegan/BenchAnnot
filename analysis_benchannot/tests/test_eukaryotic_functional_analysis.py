@@ -8,6 +8,8 @@ from benchannot.eukaryotic.functional_analysis import (
     categorize_functional_shifts,
     is_informative,
     select_first_reference_transcript,
+    select_first_submitted_transcript,
+    select_common_tool_hits,
     separate_isoform_suffix,
 )
 from benchannot.prokaryotic.functional_analysis import is_informative as prok_is_informative
@@ -101,6 +103,33 @@ class EukaryoticFunctionalAnalysisTests(unittest.TestCase):
         self.assertEqual(summary.loc["Kofam", "Under-Annotation"], 1)
         self.assertEqual(len(details), 4)
         self.assertTrue((with_reference.sum(axis=1) == 4).all())
+
+    def test_filters_submission_before_selecting_first_transcript(self):
+        table = pd.DataFrame(
+            {
+                "RNA_ID": ["rna-missing", "rna-submitted", "rna-other"],
+                "locus_tag": ["g1", "g1", "g2"],
+            }
+        )
+
+        result = select_first_submitted_transcript(
+            table, {"rna-submitted", "rna-other"}
+        )
+
+        self.assertEqual(result["RNA_ID"].tolist(), ["rna-submitted", "rna-other"])
+
+    def test_selects_only_records_returned_by_every_tool(self):
+        table = pd.DataFrame(
+            {
+                "RNA_ID": ["rna-common", "rna-missing"],
+                "Kofam_returned": [True, False],
+                "EggNOG_returned": [True, True],
+            }
+        )
+
+        result = select_common_tool_hits(table, ["Kofam", "EggNOG"])
+
+        self.assertEqual(result["RNA_ID"].tolist(), ["rna-common"])
 
 
 if __name__ == "__main__":

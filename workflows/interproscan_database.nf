@@ -41,20 +41,9 @@ workflow RESOLVE_INTERPROSCAN_DB {
 
         cacheDir.mkdirs()
 
-        prepared = PREPARE_INTERPROSCAN(
-            cacheDir.toString()
-        )
-
-        packed = PACK_SQUASHFS(
-            prepared.database_dir,
-            'interproscan',
-            "interproscan_${params.interproscan_version}"
-        )
-
-        ips_db_ch = packed.database.map {
-            database_name, database_image ->
-                database_image
-        }
+        prepared = PREPARE_INTERPROSCAN(cacheDir.toString())
+        packed = PACK_SQUASHFS(prepared.database_dir, 'interproscan', "interproscan_${params.interproscan_version}")
+        ips_db_ch = packed.database.map { _database_name, database_image -> database_image }
     }
 
 

@@ -107,7 +107,7 @@ process PREPARE_PGAP {
 process PGAP {
     label "pgap"
     tag "PGAP annotation for ${sample_id}"
-    publishDir "data/reproduced/prokaryote_output_tools/pgap", mode: 'copy'
+    publishDir "${params.outdir}/prokaryote_output_tools/pgap", mode: 'copy'
 
     input:
     tuple val(sample_id), path(fasta_file), val(species)

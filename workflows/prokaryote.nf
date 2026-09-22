@@ -16,7 +16,7 @@ workflow PROKARYOTE_ANNOTATION {
 
     main:
 
-    samples_ch.multiMap { sample_id, genome_fasta, species, taxid, genetic_code ->
+    samples_ch.multiMap { sample_id, genome_fasta, species, _taxid, _genetic_code ->
 
         prokka: tuple(
             sample_id,

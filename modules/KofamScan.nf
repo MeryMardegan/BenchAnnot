@@ -141,7 +141,7 @@ process PREPARE_KOFAM {
 process KOFAMSCAN {
     label 'kofamscan'
     tag "KofamScan annotation for $sample_id"
-    publishDir "data/reproduced/eukaryote_output_tools/kofamscan", mode: 'copy'
+    publishDir "${params.outdir}/eukaryote_output_tools/kofamscan", mode: 'copy'
 
     input:
     tuple val(sample_id), path(proteins)

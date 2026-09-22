@@ -139,7 +139,7 @@ process PREPARE_INTERPROSCAN {
 process INTERPROSCAN {
     label 'interproscan'
     tag "InterProScan annotation for $sample_id"
-    publishDir "data/reproduced/eukaryote_output_tools/interproscan", mode: 'copy'
+    publishDir "${params.outdir}/eukaryote_output_tools/interproscan", mode: 'copy'
 
     input:
     // Input comes from GFFREAD: tuple(val(sample_id), path("${sample_id}.faa")).

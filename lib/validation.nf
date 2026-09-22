@@ -54,7 +54,7 @@ def managedDatabaseImageIsValid(String imagePath) {
 
         return image.size() == expectedSize
 
-    } catch (Exception ignored) {
+    } catch (Exception _ignored) {
 
         return false
     }

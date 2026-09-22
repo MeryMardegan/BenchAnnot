@@ -64,7 +64,7 @@ workflow RESOLVE_BAKTA_DB {
          * Downstream BAKTA expects only the database image path.
          */
         bakta_db_ch = packed.database.map {
-            database_name, database_image ->
+            _database_name, database_image ->
                 database_image
         }
     }
