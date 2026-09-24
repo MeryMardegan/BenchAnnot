@@ -6,6 +6,8 @@ import pandas as pd
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 
+from benchannot.paths import repository_relative
+
 GFF_COLUMNS = ["seqid", "source", "type", "start", "end", "score", "strand", "phase", "attributes"]
 FEATURE_COLUMNS = [
     *GFF_COLUMNS,
@@ -27,16 +29,6 @@ LOCUS_COLUMNS = [
     "protein_ids",
     "products",
 ]
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-
-def display_path(path):
-    path = Path(path).resolve()
-    try:
-        return str(path.relative_to(PROJECT_ROOT))
-    except ValueError:
-        return str(path)
-
 def run_pre_processing(anno_sc, sample_id_sc, filtered_gff_sc):
     """
     Run the original Bash preprocessing step used for GFF filtering.
@@ -80,13 +72,6 @@ def run_pre_processing(anno_sc, sample_id_sc, filtered_gff_sc):
         text=True,
         check=True,
     )
-
-def locate_project_root():
-    cwd = Path.cwd().resolve()
-    for candidate in (cwd, *cwd.parents):
-        if (candidate / "input.ipynb").is_file() and (candidate / "results").is_dir():
-            return candidate
-    raise FileNotFoundError("Could not locate the BenchAnnot project root")
 
 def parse_attributes(raw_attributes):
     attributes = {}
@@ -358,9 +343,9 @@ def build_reference_audit(
     ].reset_index(drop=True)
     gff_summary = pd.DataFrame(
         [
-            _summary_row("Input", "original_gff", display_path(original_gff), "Original annotation GFF"),
-            _summary_row("Input", "filtered_gff", display_path(filtered_gff), "GFF supplied to GFFread"),
-            _summary_row("Input", "gffread_fasta", display_path(gffread_fasta), "Protein FASTA emitted by GFFread"),
+            _summary_row("Input", "original_gff", repository_relative(original_gff), "Original annotation GFF"),
+            _summary_row("Input", "filtered_gff", repository_relative(filtered_gff), "GFF supplied to GFFread"),
+            _summary_row("Input", "gffread_fasta", repository_relative(gffread_fasta), "Protein FASTA emitted by GFFread"),
             _summary_row("Pre-GFFread", "features_total", scan["total_features"], "Non-comment GFF records before filtering"),
             _summary_row("Pre-GFFread", "features_kept", scan["kept_features"], "Records retained for GFFread"),
             _summary_row("Pre-GFFread", "features_removed", len(scan["removed"]), "Unknown-strand or trans-splicing records"),
@@ -376,8 +361,8 @@ def build_reference_audit(
     )
     reference_summary = pd.DataFrame(
         [
-            _summary_row("Input", "original_gff", display_path(original_gff), "GFF used for exact identifier mapping"),
-            _summary_row("Input", "reference_fasta", display_path(reference_fasta), "NCBI FAA defining the reference universe"),
+            _summary_row("Input", "original_gff", repository_relative(original_gff), "GFF used for exact identifier mapping"),
+            _summary_row("Input", "reference_fasta", repository_relative(reference_fasta), "NCBI FAA defining the reference universe"),
             _summary_row("Mapping", "reference_proteins", len(reference), "Proteins in the NCBI FAA mapped through the GFF"),
             _summary_row("Mitochondrial removal", "rows_removed", len(mitochondrial_removed), f"RNA_ID starts with {mitochondrial_prefix}"),
             _summary_row("Prepared reference", "transcript_rows", len(transcript_reference), "One row per protein/transcript"),
@@ -388,25 +373,25 @@ def build_reference_audit(
     gff_readme = pd.DataFrame(
         [
             {"section": "Purpose", "topic": "Universe", "description": "GFFread is audited only; it never defines or filters the NCBI reference universe."},
-            {"section": "Inputs", "topic": "Original GFF", "description": display_path(original_gff)},
-            {"section": "Inputs", "topic": "Filtered GFF", "description": display_path(filtered_gff)},
-            {"section": "Inputs", "topic": "GFFread FAA", "description": display_path(gffread_fasta)},
+            {"section": "Inputs", "topic": "Original GFF", "description": repository_relative(original_gff)},
+            {"section": "Inputs", "topic": "Filtered GFF", "description": repository_relative(filtered_gff)},
+            {"section": "Inputs", "topic": "GFFread FAA", "description": repository_relative(gffread_fasta)},
             {"section": "Identifiers", "topic": "feature_id", "description": "Exact GFF ID attribute for any feature type."},
             {"section": "Identifiers", "topic": "RNA_ID", "description": "Exact ID attribute only for mRNA rows; blank for every other feature type."},
             {"section": "Identifiers", "topic": "gene_id", "description": "Gene feature ID or mRNA gene Parent; child rows are resolved through their transcript Parent when possible."},
-            {"section": "Paths", "topic": "Documentation", "description": "All input paths in this report are relative to the project root."},
+            {"section": "Paths", "topic": "Documentation", "description": "All input paths in this report are relative to the repository root."},
             {"section": "Interpretation", "topic": "Stages", "description": "Pre-GFFread rows were not supplied to GFFread; post-GFFread rows were supplied but emitted no protein."},
         ]
     )
     reference_readme = pd.DataFrame(
         [
             {"section": "Purpose", "topic": "Universe", "description": "The NCBI protein FAA is the reference universe; GFFread does not filter it."},
-            {"section": "Inputs", "topic": "Original GFF", "description": display_path(original_gff)},
-            {"section": "Inputs", "topic": "NCBI reference FAA", "description": display_path(reference_fasta)},
+            {"section": "Inputs", "topic": "Original GFF", "description": repository_relative(original_gff)},
+            {"section": "Inputs", "topic": "NCBI reference FAA", "description": repository_relative(reference_fasta)},
             {"section": "Identifiers", "topic": "Transcript table", "description": "One row per NCBI protein and exact RNA_ID, with gene_id and locus_tag mapped through the GFF."},
             {"section": "Identifiers", "topic": "Locus table", "description": "Exactly one row per locus_tag; transcript, protein, and product values are aggregated without loss."},
             {"section": "Products", "topic": "Source", "description": "Products come from NCBI FAA descriptions; organism suffixes in square brackets are removed."},
-            {"section": "Paths", "topic": "Documentation", "description": "All input paths in this report are relative to the project root."},
+            {"section": "Paths", "topic": "Documentation", "description": "All input paths in this report are relative to the repository root."},
         ]
     )
 

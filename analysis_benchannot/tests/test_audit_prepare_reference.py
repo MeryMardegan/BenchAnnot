@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -45,7 +46,13 @@ class ReferenceAuditTests(unittest.TestCase):
                 ["protein alpha", "protein beta, isoform B"],
             )
 
-    def test_reference_is_independent_of_gffread_inventory(self):
+    @patch(
+        "benchannot.eukaryotic.audit_prepare_reference.repository_relative",
+        side_effect=lambda path: f"fixture/{Path(path).name}",
+    )
+    def test_reference_is_independent_of_gffread_inventory(
+        self, repository_relative_mock
+    ):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             gff = root / "reference.gff"
@@ -111,6 +118,94 @@ class ReferenceAuditTests(unittest.TestCase):
             self.assertTrue((prepared / "locus_reference.tsv").is_file())
             empty_sidecar = output / "audit/gff_gffread/example/unexpected_gffread_ids.tsv"
             self.assertEqual(empty_sidecar.read_text(encoding="utf-8"), "RNA_ID\n")
+
+            gff_summary = result["gff_summary"].set_index("metric")["value"]
+            self.assertEqual(gff_summary["original_gff"], "fixture/reference.gff")
+            self.assertEqual(gff_summary["filtered_gff"], "fixture/filtered.gff")
+            self.assertEqual(gff_summary["gffread_fasta"], "fixture/gffread.faa")
+
+            reference_summary = result["reference_summary"].set_index("metric")[
+                "value"
+            ]
+            self.assertEqual(
+                reference_summary["original_gff"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                reference_summary["reference_fasta"], "fixture/reference.faa"
+            )
+
+            gff_readme = result["gff_readme"].set_index("topic")["description"]
+            self.assertEqual(gff_readme["Original GFF"], "fixture/reference.gff")
+            self.assertEqual(gff_readme["Filtered GFF"], "fixture/filtered.gff")
+            self.assertEqual(gff_readme["GFFread FAA"], "fixture/gffread.faa")
+            self.assertEqual(
+                gff_readme["Documentation"],
+                "All input paths in this report are relative to the repository root.",
+            )
+
+            reference_readme = result["reference_readme"].set_index("topic")[
+                "description"
+            ]
+            self.assertEqual(
+                reference_readme["Original GFF"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                reference_readme["NCBI reference FAA"], "fixture/reference.faa"
+            )
+            self.assertEqual(
+                reference_readme["Documentation"],
+                "All input paths in this report are relative to the repository root.",
+            )
+
+            saved_gff_summary = pd.read_csv(
+                result["outputs"]["gff_summary"], sep="\t"
+            ).set_index("metric")["value"]
+            self.assertEqual(
+                saved_gff_summary["original_gff"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                saved_gff_summary["filtered_gff"], "fixture/filtered.gff"
+            )
+            self.assertEqual(
+                saved_gff_summary["gffread_fasta"], "fixture/gffread.faa"
+            )
+
+            saved_reference_summary = pd.read_csv(
+                result["outputs"]["reference_summary"], sep="\t"
+            ).set_index("metric")["value"]
+            self.assertEqual(
+                saved_reference_summary["original_gff"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                saved_reference_summary["reference_fasta"], "fixture/reference.faa"
+            )
+
+            workbook_gff_summary = pd.read_excel(
+                result["outputs"]["gff_workbook"], sheet_name="Summary"
+            ).set_index("metric")["value"]
+            self.assertEqual(
+                workbook_gff_summary["original_gff"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                workbook_gff_summary["filtered_gff"], "fixture/filtered.gff"
+            )
+            self.assertEqual(
+                workbook_gff_summary["gffread_fasta"], "fixture/gffread.faa"
+            )
+
+            workbook_reference_summary = pd.read_excel(
+                result["outputs"]["reference_workbook"], sheet_name="Summary"
+            ).set_index("metric")["value"]
+            self.assertEqual(
+                workbook_reference_summary["original_gff"], "fixture/reference.gff"
+            )
+            self.assertEqual(
+                workbook_reference_summary["reference_fasta"],
+                "fixture/reference.faa",
+            )
+
+            repository_relative_mock.assert_called()
+            self.assertEqual(repository_relative_mock.call_count, 10)
 
     def test_feature_ids_do_not_populate_rna_id_for_non_mrna_rows(self):
         with TemporaryDirectory() as directory:
