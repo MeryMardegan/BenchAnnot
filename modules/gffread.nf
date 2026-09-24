@@ -7,8 +7,8 @@ process GFFREAD {
   tuple val(sample_id), path(fasta), path(anno)
 
   output:
-  tuple val(sample_id), path("${sample_id}.faa"), emit: proteins
   tuple val(sample_id), path("${sample_id}.filtered.gff"), emit: filtered_gff
+  tuple val(sample_id), path("${sample_id}_gffread.faa"), emit: proteins
 
   script:
   """
@@ -37,6 +37,6 @@ process GFFREAD {
     gffread -F -S -C -J \
       "${sample_id}.filtered.gff" \
       -g "${fasta}" \
-      -y "${sample_id}.faa"
+      -y "${sample_id}_gffread.faa"
     """
 }

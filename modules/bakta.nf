@@ -225,7 +225,7 @@ process PREPARE_BAKTA {
 process BAKTA {
     label 'bakta'
     tag "Bakta annotation for ${sample_id}"
-    publishDir "${params.outdir}/prokaryote_output_tools/bakta", mode: 'copy'
+    publishDir "${params.outdir}/prokaryote_output_tools/bakta", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
     tuple val(sample_id), path(fasta_file)

@@ -18,19 +18,14 @@ workflow PROKARYOTE_ANNOTATION {
 
     samples_ch.multiMap { sample_id, genome_fasta, species, _taxid, _genetic_code ->
 
-        prokka: tuple(
-            sample_id,
-            genome_fasta
-        )
+        prokka: tuple(sample_id, genome_fasta)
 
         bakta: tuple(
             sample_id,
             genome_fasta
         )
 
-        eggnog: tuple(
-            genome_fasta
-        )
+        eggnog: tuple(sample_id, genome_fasta)
 
         pgap: tuple(
             sample_id,

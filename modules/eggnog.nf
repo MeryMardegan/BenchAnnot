@@ -68,15 +68,15 @@ process PREPARE_EGGNOG {
 
 process EGGNOG_PROKARYOTE {
     label "eggnog_mapper_v2"
-    tag "${fasta_file.baseName}"
-    publishDir "${params.outdir}/prokaryote_output_tools/eggnog", mode: 'copy'
+    tag "${sample_id}"
+    publishDir "${params.outdir}/prokaryote_output_tools/eggnog", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
-    path fasta_file
+    tuple val(sample_id), path(fasta_file)
     path eggnog_db
 
     output:
-    path("${fasta_file.baseName}_eggnog/*"), emit: eggnog_results
+    tuple val(sample_id), path("${sample_id}_eggnog/*"), emit: eggnog_results
 
     script:
     """
@@ -90,17 +90,18 @@ process EGGNOG_PROKARYOTE {
 
     # Use a local temp directory to avoid polluting the work directory
     mkdir -p tmp
-    mkdir -p ${fasta_file.baseName}_eggnog
+    mkdir -p ${sample_id}_eggnog
+
     emapper.py \
     --itype genome \
     --genepred prodigal \
     --decorate_gff yes \
     -i ${fasta_file} \
-    -o ${fasta_file.baseName} \
+    -o ${sample_id} \
     --data_dir /database \
     -m mmseqs \
     --cpu ${task.cpus} \
-    --output_dir ${fasta_file.baseName}_eggnog \
+    --output_dir ${sample_id}_eggnog \
     --dbmem
     """
 
@@ -109,7 +110,7 @@ process EGGNOG_PROKARYOTE {
 process EGGNOG_EUKARYOTE {
     label "eggnog_mapper_v2"
     tag "$sample_id"
-    publishDir "${params.outdir}/eukaryote_output_tools/eggnog", mode: 'copy'
+    publishDir "${params.outdir}/eukaryote_output_tools/eggnog", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
     tuple val(sample_id), path(proteins)
@@ -121,7 +122,8 @@ process EGGNOG_EUKARYOTE {
     script:
     """
     set -euo pipefail
-    # Activate the container's environment for eggNOG-mapper.
+
+    # Activate the container's environment for eggNOG-mapper
     export MAMBA_SKIP_ACTIVATE=""
     export EGGNOG_DATA_DIR=/database
     export NXT_TASK_MONITOR=0
@@ -138,8 +140,8 @@ process EGGNOG_EUKARYOTE {
         -m mmseqs \
         --cpu ${task.cpus} \
         --data_dir /database \
-	--output ${sample_id} \
-	--output_dir ${sample_id}_eggnog \
+	    --output ${sample_id}_eggnog \
+	    --output_dir ${sample_id}_eggnog \
         --temp_dir ./tmp
         """
 }
