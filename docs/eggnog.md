@@ -8,25 +8,26 @@ eggNOG-mapper assigns functional annotations to protein sequences using precompu
 
 ## Outputs
 - `${sample_id}_eggnog.emapper.*` stored under:
-	- `results/eukaryotes/eggnog/`
+	- `data/reproduced/eukaryote_output_tools/eggnog/` by default
 
 ## Database Setup
 Download the recommended genome assembly databases:
 - `mmseqs.tar.gz`
 - `eggnog.db.gz`
 
-Extract them into a directory accessible by the pipeline, for example:
-`data/eukaryotes/db/eggnog/`
+The pipeline packages the prepared files as:
+`data/database/eggnog/eggnog_2026-09.sqsh`
 
 ## Configuration
-Set the database path in `nextflow.config`:
-- `params.emapper_data_dir = "${projectDir}/data/eukaryotes/db/eggnog"`
+Set the database image path in `nextflow.config`:
+- `params.eggnog_db = "${projectDir}/data/database/eggnog/eggnog_2026-09.sqsh"`
 
-The container binds this directory to `/eggnog-data` and exports `EGGNOG_DATA_DIR`.
+The container mounts the image at `/database` and exports that location through
+`EGGNOG_DATA_DIR`.
 
 ## Example Run
 ```bash
-nextflow run main.nf -entry eukaryotes_annot
+nextflow run main.nf --annotation_type eukaryote
 ```
 
 ## Notes

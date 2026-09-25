@@ -29,6 +29,10 @@ workbook.
 
 ## Notebook sequence
 
+Each notebook explicitly selects `origin` or `reproduced`. Paths below are
+relative to `analysis_benchannot/2_run/output/<dataset>/eukaryotic/`; raw tool
+inputs come from `data/<dataset>/eukaryote_output_tools/`.
+
 ### 1. Audit and prepare the reference
 
 `2_run/notebooks/eukaryotic/1_audit_prepare_reference.ipynb` writes two audit
@@ -134,6 +138,7 @@ records.
 ## Reproducibility
 
 Run notebooks from the project environment and execute each notebook from its
-first cell. The notebooks discover the project root from `pyproject.toml`
-where supported. UniProt data are stored in a local cache with request metadata,
-record counts, and a SHA-256 response hash. Unit tests do not access the network.
+first cell. Paths are resolved by the installed `benchannot.paths` module and
+do not depend on the Jupyter working directory. UniProt data are stored in a
+local cache with request metadata, record counts, and a SHA-256 response hash.
+Unit tests do not access the network.

@@ -5,5 +5,5 @@
 - [Data contracts](data-contracts.md)
 - [Prokaryotic roadmap](prokaryotic-roadmap.md)
 
-The root [README](../README.md) provides the short project overview and
+The root [README](../../README.md) provides the short project overview and
 execution order.

@@ -10,14 +10,14 @@ KofamScan is a tool for functional annotation that assigns KEGG Orthologs (KOs) 
   - `profiles/` → HMM profiles for KO assignments  
   - `ko_list` → KO ID definitions
 
-In this pipeline, the database is expected to be located at:
-`data/eukaryotes/db/kofamscan/`
+In this pipeline, the database is packaged as a SquashFS image under:
+`data/database/kofamscan/`
 
 ## Output
 
 - Tab-delimited results with KO assignments for each input proteome.  
 - Example output file:
-`results/eukaryotes/kofamscan/<sample>.kofam.txt`
+`data/reproduced/eukaryote_output_tools/kofamscan/<sample>.kofam.txt`
 The output contains:
 - Query sequence ID
 - Assigned KO number
@@ -31,16 +31,16 @@ To run KofamScan outside Nextflow (standalone example):
 ```bash
 exec_annotation \
 -o drosophila_ko.txt \
--p data/eukaryotes/db/profiles/ \
--k data/eukaryotes/db/ko_list \
+-p data/database/kofamscan/profiles/ \
+-k data/database/kofamscan/ko_list \
 drosophila_melanogaster.faa
 ```
 
 ## Integration in Pipeline
 
 Module definition: `modules/KofamScan.nf`
-Results are automatically stored under:
-`results/eukaryotes/kofamscan/`
+Results are automatically stored by default under:
+`data/reproduced/eukaryote_output_tools/kofamscan/`
 
 ## Database Setup
 
@@ -48,8 +48,8 @@ Before running, download the KEGG HMM profiles:
 wget ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
 wget ftp://ftp.genome.jp/pub/db/kofam/ko_list.gz
 
-tar -xzf profiles.tar.gz -C data/eukaryotes/db/kofamscan/
-gunzip ko_list.gz -c > data/eukaryotes/db/kofamscan/ko_list
+tar -xzf profiles.tar.gz -C data/database/kofamscan/
+gunzip ko_list.gz -c > data/database/kofamscan/ko_list
 
 Ensure that:
 

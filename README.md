@@ -18,11 +18,13 @@ benchmarking and downstream analysis.
 
 ### Inputs
 
-Place FASTA files (`.fna`) in the `data/genome_eukaryote` or `data/genome_prokaryote` directory.
+Place FASTA files (`.fna`) in `data/genome_eukaryote/` or
+`data/genome_prokaryote/` and describe them in the corresponding samplesheet
+under `assets/`.
 Required files for eukaryotes:
-- Genome FASTA files: `data/eukaryotes/<sample>.fna`
-- Matching GFF files:  `data/eukaryotes/<sample>.gff`
-The pipeline pairs FASTA and GFF files by basename.
+- Genome FASTA files: `data/genome_eukaryote/<sample>.fna`
+- Matching GFF files: `data/genome_eukaryote/<sample>.gff`
+- Reference protein files: `data/genome_eukaryote/<sample>.faa`
 
 ### Run
 
@@ -33,16 +35,18 @@ export SINGULARITY_TMPDIR="$PWD/apptainer_cache/tmp"
 export TMPDIR="$PWD/apptainer_cache/tmp"
 
 ```bash
-nextflow run main.nf --bakta_db_dir path/to/bakta/db
+nextflow run main.nf --annotation_type both
 ```
 
 Bakta requires a specific database (version 6), downloadable
 [here](https://zenodo.org/records/14916843). After downloading and extracting,
-provide the path with `--bakta_db_dir`.
+provide a SquashFS image with `--bakta_db`, or leave the parameter unset so
+BenchAnnot prepares the pinned database release.
 
 ### Outputs
 
-- Annotated results for each genome are stored in the `data/reproduced/eukaryote_output_tools` directory for eukaryote and `data/reproduced/prokaryote_output_tools`.
+- Annotated results are stored under `data/reproduced/eukaryote_output_tools/`
+  and `data/reproduced/prokaryote_output_tools/` by default.
 - Intermediate files are stored in the `work/` directory.
 
 ### Modules
@@ -51,12 +55,12 @@ provide the path with `--bakta_db_dir`.
 - `modules/prokka.nf` — Prokka 1.14.6 ([GitHub](https://github.com/tseemann/prokka), [Docker Image](https://hub.docker.com/r/staphb/prokka))
 - `modules/bakta.nf` — Bakta 1.11.3 ([GitHub](https://github.com/oschwengers/bakta), [Docker Image](https://hub.docker.com/r/oschwengers/bakta))
 - `modules/eggnog.nf` — eggnog-mapper-v2 2.1.13 ([GitHub](https://github.com/eggnogdb/eggnog-mapper))
-- `modules/pgap.nf`— Prokaryotic Genome Annotation Pipeline 2025-05-06.build7983 ([GitHub](https://github.com/ncbi/pgap))
+- `modules/pgap.nf`— Prokaryotic Genome Annotation Pipeline 2026-06-18.build8602 ([GitHub](https://github.com/ncbi/pgap))
 **Eukaryote**
 - `modules/gffread.nf` — processes GFF/GTF files (e.g., extracting transcript sequences)
 - `modules/kofamscan.nf` — assigns KEGG Orthologs using HMM profiles
 - `modules/interproscan.nf` — functional domain and GO/pathway annotation
-- `module/eggNOG-mapper.nf` — Orthology-based functional annotation.
+- `modules/eggnog.nf` — Orthology-based functional annotation.
 
 ### Parameters
 
@@ -67,13 +71,15 @@ Set database locations in [nextflow.config](nextflow.config):
 
 **Bakta**
 Requires Bakta database version 6. 
-Download from [Zenodo](https://zenodo.org/records/14916843), extract, and provide the absolute path using:
-`--bakta_db_dir /absolute/path/to/bakta/db`
+Download from [Zenodo](https://zenodo.org/records/14916843) and package it as a
+SquashFS image, then use `--bakta_db /absolute/path/to/bakta.sqsh`. When the
+parameter is unset, the pipeline prepares its pinned release under
+`data/database/bakta/`.
 
 **EggNog Mapper**
 Requires Eggnog database files.
-Download both mmseqs.tar.gz and eggnog.db.gz fom [EggNog](https://eggnogdb.org/download/emapperdb-5.0.2/) (as recommended for genome assemblies), extract, and provide the absolute path using:
-`--eggnog_db_dir /absolute/path/to/eggnog/db`
+The configured image is `data/database/eggnog/eggnog_2026-09.sqsh`. If it is
+absent, the pipeline prepares and packages the database.
 
 **PGAP**
 Requires a local PGAP installation (including its databases and container images). Follow the official Quick Start to install PGAP and download required data: https://github.com/ncbi/pgap/wiki/Quick-Start. Once installed, provide the absolute installation path with:
@@ -81,19 +87,19 @@ Requires a local PGAP installation (including its databases and container images
 
 #### Eukaryote
 
-- `params.ips_data_dir` for InterProScan data
-- `params.emapper_data_dir` for eggNOG data
-- KofamScan databases should be placed: `data/database/kofamscan/`
+- `params.ips_db` optionally supplies an InterProScan SquashFS image.
+- `params.eggnog_db` identifies the eggNOG SquashFS image.
+- `params.kofamscan_db` optionally supplies a KofamScan SquashFS image.
 
 #### Run command
-Here have tre possibilities: run: eukaryote or prokaryote or run all
+Choose eukaryotic, prokaryotic, or combined annotation:
 **Only Eukaryote**
 ```bash
-nextflow run main.nf -entry eukaryotes_annot
+nextflow run main.nf --annotation_type eukaryote
 ```
 **Only Procaryote**
 ```
-nextflow run main.nf --bakta_db_dir /absolute/path/to/bakta/db --eggnog_db_dir /absolute/path/to/eggnog/db --pgap_dir /absolute/path/to/pgap
+nextflow run main.nf --annotation_type prokaryote
 ```
 **Run all**
 nextflow run main.nf
@@ -107,10 +113,10 @@ nextflow run main.nf
 
 ### Outputs
 For prokaryotes:
-- Per-sample annotation directories under `results/module/sample_module/`, where `module` is the tool used and `sample` is the genome used.
+- Per-tool outputs under `data/reproduced/prokaryote_output_tools/`.
 
 ### Documentation
-- eggNOG-mapper: [docs/egg.md](docs/egg.md)
+- eggNOG-mapper: [docs/eggnog.md](docs/eggnog.md)
 - InterProScan: [docs/interproscan.md](docs/interproscan.md)
 - KofamScan: [docs/KofamScan.md](docs/KofamScan.md)
 
@@ -118,7 +124,8 @@ For prokaryotes:
 
 - Pipeline ensures reproducibility and scalability using Docker containers.
 - Additional tools for functional annotation (e.g., InterProScan, eggNOG-mapper, Funannotate) will be integrated in future updates.
-- All intermediate files remain in `work/`, while final structured results are under `results/`.
+- All intermediate files remain in `work/`, while final structured results are
+  published under `data/reproduced/` by default.
 
 ## Analysis workflow
 
@@ -162,14 +169,15 @@ python -m unittest discover -s analysis_benchannot/tests -v
 
 ### Inputs
 
-Reference files are stored under `data/genome_eukaryote/`. Tool outputs are
-stored under `data/origin/eukaryote_output_tools/`. File names and required
-schemas are documented in
+Reference files are stored under `data/genome_eukaryote/`. Each notebook
+explicitly selects `origin` or `reproduced`; tool inputs are then read from
+`data/<dataset>/eukaryote_output_tools/`. File names and required schemas are documented in
 [`analysis_benchannot/docs/data-contracts.md`](analysis_benchannot/docs/data-contracts.md).
 
 ### Outputs
 
-The notebooks write organized outputs under `2_run/output/eukaryotic/`:
+The notebooks write organized outputs under
+`analysis_benchannot/2_run/output/<dataset>/eukaryotic/`:
 
 - `audit/gff_gffread/<organism>/`: GFF/GFFread processing audit;
 - `audit/reference/<organism>/`: NCBI transcript and locus reference audit;
@@ -187,11 +195,11 @@ definitions and denominator rules are described in
 ### Project layout
 
 ```text
+data/                        shared references, datasets, databases, runtimes
 analysis_benchannot/
     1_setup/                 locked environment and setup notes
     2_run/notebooks/         eukaryotic and prokaryotic notebooks
-    2_run/output/            generated analysis artifacts
-    data/                    reference genomes and tool outputs
+    2_run/output/<dataset>/  generated analysis artifacts
     docs/                    workflow, schema, and roadmap documentation
     src/benchannot/          tested parsing and analysis functions
     tests/                   unit tests for the extracted logic
@@ -199,7 +207,7 @@ analysis_benchannot/
 
 ### Scope and status
 
-The eukaryotic workflow is the validated active path. The prokaryotic
-notebooks have not been changed in this refactor; correctness and
-reproducibility priorities for a future pass are listed in
+The eukaryotic workflow is the validated active path. The prokaryotic notebooks
+now use the same explicit dataset and output namespaces, while scientific
+correctness and reproducibility priorities for a future pass remain listed in
 [`analysis_benchannot/docs/prokaryotic-roadmap.md`](analysis_benchannot/docs/prokaryotic-roadmap.md).
