@@ -3,7 +3,7 @@ process PACK_SQUASHFS {
     label 'squashfs_tools'
     tag "${database_name}"
 
-    publishDir { "data/database/${database_name}" }, mode: 'copy', overwrite: true
+    publishDir { "${projectDir}/data/database/${database_name}" }, mode: 'copy', overwrite: true
 
     input:
     path(database_dir)
