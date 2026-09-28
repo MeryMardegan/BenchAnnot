@@ -1,9 +1,12 @@
-// ============================================================
-// Generic helpers
-// ============================================================
+// ============================================================================
+// Input and resource validation
+// ============================================================================
 
-// Generic validation for directory-type parameters.
-// Used by any workflow that needs to check --param paths before running.
+// ---------------------------------------------------------------------------
+// Generic path validation
+// ---------------------------------------------------------------------------
+
+// Validate directory parameters before a workflow starts.
 def validateRequiredDirs(List<String> paramNames) {
     def missing = paramNames.findAll { name -> !params[name] }
     if (missing) {
@@ -30,7 +33,6 @@ def databaseImageIsValid(String imagePath) {
 }
 
 def managedDatabaseImageIsValid(String imagePath) {
-
     if (!databaseImageIsValid(imagePath)) {
         return false
     }
@@ -41,41 +43,32 @@ def managedDatabaseImageIsValid(String imagePath) {
     if (!sizeManifest.exists() ||
         !sizeManifest.isFile() ||
         sizeManifest.size() <= 0) {
-
         return false
     }
 
     try {
-
         def expectedSize = java.nio.file.Files
             .readString(sizeManifest)
             .trim()
             .toLong()
 
         return image.size() == expectedSize
-
     } catch (Exception _ignored) {
-
         return false
     }
 }
 
-// ============================================================
-// Resolve the path to a samplesheet file.
-// If the path is absolute, use it as is. Otherwise, resolve it relative to the project directory.
-// ============================================================
+// Resolve relative samplesheet entries from the project root, not the launch directory.
 def resolveSamplesheetPath(String rawPath) {
     def file = file(rawPath)
     return file.isAbsolute() ? file : file("${projectDir}/${rawPath}")
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // Samplesheet row validation
-// ============================================================
+// ---------------------------------------------------------------------------
 
-// Validate one row from the prokaryotic samplesheet.
-// Required metadata must be present, genome FASTA must exist,
-// taxid must be numeric, and genetic_code defaults to 11 when absent.
+// Require complete metadata and default the optional genetic code to 11.
 def validateProkaryoteRow(Map row) {
     def requiredFields = ['sample_id', 'genome_fasta', 'species', 'taxid']
     def missing = requiredFields.findAll { field -> !row[field] }
@@ -100,15 +93,11 @@ def validateProkaryoteRow(Map row) {
         error "Prokaryote samplesheet: genetic_code must be numeric for sample '${row.sample_id}': '${geneticCode}'"
     }
 
-    return tuple(row.sample_id, genomeFile, row.species, taxid, geneticCode
-    )
+    return tuple(row.sample_id, genomeFile, row.species, taxid, geneticCode)
 }
 
-// Validate one row from the eukaryotic samplesheet.
-// Required metadata must be present and all referenced files
-// must exist on disk.
+// Require complete metadata and verify every referenced input file.
 def validateEukaryoteRow(Map row) {
-
     def requiredFields = ['sample_id', 'genome_fasta', 'reference_gff', 'reference_faa', 'organism_id']
     def missing = requiredFields.findAll { field -> !row[field] }
 
@@ -127,20 +116,17 @@ def validateEukaryoteRow(Map row) {
     ]
 
     inputFiles.each { label, inputFile ->
-
         if (!inputFile.exists() || !inputFile.isFile()) {
             error "Eukaryote samplesheet: ${label} not found for sample '${row.sample_id}': ${inputFile}"
         }
     }
 
-    return tuple(
-        row.sample_id, genomeFile, gffFile, faaFile, row.organism_id
-    )
+    return tuple(row.sample_id, genomeFile, gffFile, faaFile, row.organism_id)
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // Per-tool external resource validation
-// ============================================================
+// ---------------------------------------------------------------------------
 
 def validateBaktaInputs() {
     validateRequiredFiles(['bakta_db'])
@@ -151,22 +137,14 @@ def validatePgapInputs() {
     validateRequiredFiles(['pgap_container'])
 }
 
-// ============================================================
-// Generic validation for file-type parameters
-// ============================================================
-
 def validateRequiredFiles(List<String> paramNames) {
-
     def missing = paramNames.findAll { name -> !params[name] }
-
     if (missing) {
         error "Missing required parameters: ${missing.collect { name -> "--${name}" }.join(', ')}"
     }
 
     paramNames.each { name ->
-
         def location = file(params[name])
-
         if (!location.exists() || !location.isFile() || location.size() <= 0) {
             error "Parameter --${name} must be an existing non-empty file: ${params[name]}"
         }

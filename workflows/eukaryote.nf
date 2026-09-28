@@ -4,7 +4,7 @@ include { INTERPROSCAN } from '../modules/interproscan'
 include { EGGNOG_EUKARYOTE } from '../modules/eggnog'
 
 workflow EUKARYOTE_ANNOTATION {
-    
+
     take:
 
     samples_ch
@@ -12,8 +12,9 @@ workflow EUKARYOTE_ANNOTATION {
     ips_db_ch
     eggnog_db_ch
 
-    main:    
+    main:
 
+    // GFFread consumes the genome and GFF; the remaining metadata stays validated upstream.
     samples_ch
         .map { sample_id, genome_fasta, reference_gff, _reference_faa, _organism_id ->
             tuple(sample_id, genome_fasta, reference_gff)

@@ -1,35 +1,84 @@
 # eggNOG-mapper
 
-## Overview
-eggNOG-mapper assigns functional annotations to protein sequences using precomputed orthology and HMM profiles. In this pipeline, it consumes the protein FASTA produced by GFFREAD.
+## Purpose
+
+eggNOG-mapper assigns orthology-based functional annotations. BenchAnnot uses
+eggNOG-mapper 2.1.13 in both annotation branches through `modules/eggnog.nf`.
+
+## Processes and container
+
+| Process | Label | Container |
+| --- | --- | --- |
+| `PREPARE_EGGNOG` | `eggnog_prepare` | `brunoholiva/eggnog_v2:2.1.13-sse41` |
+| `EGGNOG_PROKARYOTE` | `eggnog_mapper_v2` | `brunoholiva/eggnog_v2:2.1.13-sse41` |
+| `EGGNOG_EUKARYOTE` | `eggnog_mapper_v2` | `brunoholiva/eggnog_v2:2.1.13-sse41` |
+
+The preparation process patches only the obsolete download host embedded in
+the pinned eggNOG-mapper release. It then verifies the SQLite, DIAMOND, and
+MMseqs2 database files before packaging.
+
+## Database
+
+`params.eggnog_db` defaults to:
+
+```text
+data/database/eggnog/eggnog_2026-09.sqsh
+```
+
+If that image is missing or fails basic file validation, `RESOLVE_EGGNOG_DB`
+runs database preparation with the downloader's `-M` option and then runs
+`PACK_SQUASHFS`. Existing images are checked only for the `.sqsh` extension,
+existence, and non-zero size; the generated `.size` manifest is not consulted.
+
+The `eggnog_2026-09` name is hardcoded, but the remote database content is not
+pinned by release or checksum. The container version is fixed; the downloaded
+database snapshot is not. The image is mounted read-only at `/database`; the
+annotation process exports `EGGNOG_DATA_DIR=/database` and passes
+`--data_dir /database`.
 
 ## Inputs
-- Protein FASTA (`.faa`) produced by GFFREAD.
+
+The prokaryotic process consumes:
+
+```text
+tuple(sample_id, genome_fasta), eggnog_database_image
+```
+
+It runs genome mode with Prodigal gene prediction, requests decorated GFF
+output, and enables `--dbmem`. The eukaryotic process consumes the protein tuple
+emitted by GFFread:
+
+```text
+tuple(sample_id, proteins_faa), eggnog_database_image
+```
+
+It runs protein mode and explicitly assigns `./tmp` with `--temp_dir`. Both
+branches use the MMseqs2 search mode.
 
 ## Outputs
-- `${sample_id}_eggnog.emapper.*` stored under:
-	- `data/reproduced/eukaryote_output_tools/eggnog/` by default
 
-## Database Setup
-Download the recommended genome assembly databases:
-- `mmseqs.tar.gz`
-- `eggnog.db.gz`
+Outputs are flattened when published so the generated files are directly below
+the tool directory:
 
-The pipeline packages the prepared files as:
-`data/database/eggnog/eggnog_2026-09.sqsh`
+```text
+<outdir>/prokaryote_output_tools/eggnog/<sample_id>.emapper.*
+<outdir>/eukaryote_output_tools/eggnog/<sample_id>_eggnog.emapper.*
+```
 
-## Configuration
-Set the database image path in `nextflow.config`:
-- `params.eggnog_db = "${projectDir}/data/database/eggnog/eggnog_2026-09.sqsh"`
+The eukaryotic annotations filename matches the downstream contract:
 
-The container mounts the image at `/database` and exports that location through
-`EGGNOG_DATA_DIR`.
+```text
+<sample_id>_eggnog.emapper.annotations
+```
 
-## Example Run
+## Resources and retry policy
+
+Database preparation requests 2 CPUs, 128 GB, and 72 hours. Annotation inherits
+the default CPU count and requests 128 GB for 24 hours. Annotation retries once
+to tolerate transient container or cache failures.
+
+## Example
+
 ```bash
 nextflow run main.nf --annotation_type eukaryote
 ```
-
-## Notes
-- The module uses `emapper.py -m mmseqs` for speed on large proteomes.
-- Ensure the database path is readable by the container runtime (Docker/Apptainer).

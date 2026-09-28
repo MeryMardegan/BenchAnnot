@@ -4,7 +4,7 @@ include { PREPARE_INTERPROSCAN } from '../modules/interproscan'
 include { PACK_SQUASHFS } from '../modules/squashfs'
 
 include {
-    databaseImageIsValid;
+    databaseImageIsValid
     managedDatabaseImageIsValid
 } from '../lib/validation'
 
@@ -13,11 +13,12 @@ workflow RESOLVE_INTERPROSCAN_DB {
 
     main:
 
+    // Prefer an external image, then fall back to the BenchAnnot-managed image.
     def expectedDb = params.ips_db \
         ? params.ips_db \
         : "${projectDir}/data/database/interproscan/interproscan_${params.interproscan_version}.sqsh"
 
-
+    // Managed images must also match the recorded size manifest.
     def dbIsValid = params.ips_db \
         ? databaseImageIsValid(expectedDb) \
         : managedDatabaseImageIsValid(expectedDb)
@@ -27,22 +28,19 @@ workflow RESOLVE_INTERPROSCAN_DB {
 
         log.info "Using existing InterProScan database: ${expectedDb}"
 
-        ips_db_ch = channel.value(
-            file(expectedDb)
-        )
+        ips_db_ch = channel.value(file(expectedDb))
 
     } else {
 
         log.info "InterProScan database image not found or incomplete. Preparing ${params.interproscan_version}..."
 
-        def cacheDir = file(
-            "${projectDir}/data/database/interproscan/download"
-        )
+        def cacheDir = file("${projectDir}/data/database/interproscan/download")
 
         cacheDir.mkdirs()
 
         prepared = PREPARE_INTERPROSCAN(cacheDir.toString())
         packed = PACK_SQUASHFS(prepared.database_dir, 'interproscan', "interproscan_${params.interproscan_version}")
+        // INTERPROSCAN consumes only the image path from the packaging tuple.
         ips_db_ch = packed.database.map { _database_name, database_image -> database_image }
     }
 

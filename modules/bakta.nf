@@ -15,10 +15,6 @@ process PREPARE_BAKTA {
     """
     set -euo pipefail
 
-    # ============================================================
-    # Paths
-    # ============================================================
-
     CACHE_DIR="${cache_dir}"
 
     TARBALL="\$CACHE_DIR/db.tar.xz"
@@ -42,9 +38,9 @@ process PREPARE_BAKTA {
     echo "========================================"
 
 
-    # ============================================================
+    # ---------------------------------------------------------------------------
     # Bakta database archive
-    # ============================================================
+    # ---------------------------------------------------------------------------
 
     if [ -s "\$TARBALL" ] && \
        echo "${params.bakta_db_md5}  \$TARBALL" | md5sum -c -
@@ -87,9 +83,9 @@ process PREPARE_BAKTA {
     fi
 
 
-    # ============================================================
-    # Extract Bakta DB
-    # ============================================================
+    # ---------------------------------------------------------------------------
+    # Bakta database extraction and validation
+    # ---------------------------------------------------------------------------
 
     echo "Extracting Bakta database..."
 
@@ -99,18 +95,14 @@ process PREPARE_BAKTA {
         -C download
 
 
-    # ============================================================
-    # Validate Bakta DB using Bakta itself
-    # ============================================================
-
     echo "Validating Bakta database..."
 
     python -c 'from pathlib import Path; from bakta.db import check; info=check(Path("download/db")); expected="${params.bakta_db_version}"; detected=str(info["major"])+"."+str(info["minor"]); assert detected == expected, "Bakta DB version mismatch: expected="+expected+", detected="+detected; assert info["type"] == "full", "Bakta DB type mismatch: expected=full, detected="+str(info["type"]); print("Bakta database validated: "+detected+" ("+str(info["type"])+")")'
 
 
-    # ============================================================
-    # Prepare fixed AMRFinderPlus database
-    # ============================================================
+    # ---------------------------------------------------------------------------
+    # Pinned AMRFinderPlus database
+    # ---------------------------------------------------------------------------
 
     AMR_ROOT="download/db/amrfinderplus-db"
     AMR_VERSION="${params.bakta_amrfinder_db_version}"
@@ -121,8 +113,7 @@ process PREPARE_BAKTA {
 
     echo "Preparing AMRFinderPlus DB \$AMR_VERSION..."
 
-    # Remove the version bundled with the Bakta archive.
-    # BenchAnnot installs the explicitly pinned version instead.
+    # Replace the bundled database with the explicitly pinned version.
     rm -rf "\$AMR_ROOT"
 
     mkdir -p "\$AMR_DIR"
@@ -145,10 +136,6 @@ process PREPARE_BAKTA {
         "\$AMR_URL/"
 
 
-    # ============================================================
-    # Validate downloaded AMRFinder DB
-    # ============================================================
-
     if [ ! -s "\$AMR_DIR/version.txt" ]; then
         echo "ERROR: AMRFinderPlus version.txt was not downloaded." >&2
         exit 1
@@ -163,9 +150,9 @@ process PREPARE_BAKTA {
     fi
 
 
-    # ============================================================
-    # Index AMRFinder DB
-    # ============================================================
+    # ---------------------------------------------------------------------------
+    # AMRFinderPlus indexing and validation
+    # ---------------------------------------------------------------------------
 
     echo "Indexing AMRFinderPlus database..."
 
@@ -176,10 +163,6 @@ process PREPARE_BAKTA {
         "\$AMR_VERSION" \
         "\$AMR_ROOT/latest"
 
-
-    # ============================================================
-    # Validate AMRFinder installation
-    # ============================================================
 
     if [ ! -L "\$AMR_ROOT/latest" ]; then
         echo "ERROR: AMRFinderPlus latest symlink was not created." >&2
@@ -199,18 +182,14 @@ process PREPARE_BAKTA {
     echo "  version: \$DETECTED_AMR_VERSION"
 
 
-    # ============================================================
+    # ---------------------------------------------------------------------------
     # Final Bakta DB validation
-    # ============================================================
+    # ---------------------------------------------------------------------------
 
     echo "Final Bakta database validation..."
 
     python -c 'from pathlib import Path; from bakta.db import check; info=check(Path("download/db")); print("Final Bakta database validation successful: "+str(info["major"])+"."+str(info["minor"])+" ("+str(info["type"])+")")'
 
-
-    # ============================================================
-    # Final Nextflow output
-    # ============================================================
 
     mv download/db bakta_db
 

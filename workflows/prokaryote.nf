@@ -16,44 +16,17 @@ workflow PROKARYOTE_ANNOTATION {
 
     main:
 
+    // Preserve sample identity while distributing each genome to every tool.
     samples_ch.multiMap { sample_id, genome_fasta, species, _taxid, _genetic_code ->
-
         prokka: tuple(sample_id, genome_fasta)
-
-        bakta: tuple(
-            sample_id,
-            genome_fasta
-        )
-
+        bakta: tuple(sample_id, genome_fasta)
         eggnog: tuple(sample_id, genome_fasta)
-
-        pgap: tuple(
-            sample_id,
-            genome_fasta,
-            species
-        )
+        pgap: tuple(sample_id, genome_fasta, species)
     }
     .set { inputs }
 
-
-    PROKKA(
-        inputs.prokka
-    )
-
-    BAKTA(
-        inputs.bakta,
-        bakta_db_ch
-    )
-
-    EGGNOG_PROKARYOTE(
-        inputs.eggnog,
-        eggnog_db_ch
-    )
-
-    PGAP(
-        inputs.pgap,
-        pgap_dir_ch,
-        pgap_container_ch,
-        pgap_python_ch
-    )
+    PROKKA(inputs.prokka)
+    BAKTA(inputs.bakta, bakta_db_ch)
+    EGGNOG_PROKARYOTE(inputs.eggnog, eggnog_db_ch)
+    PGAP(inputs.pgap, pgap_dir_ch, pgap_container_ch, pgap_python_ch)
 }

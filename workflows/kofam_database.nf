@@ -4,7 +4,7 @@ include { PREPARE_KOFAM } from '../modules/KofamScan'
 include { PACK_SQUASHFS } from '../modules/squashfs'
 
 include {
-    databaseImageIsValid;
+    databaseImageIsValid
     managedDatabaseImageIsValid
 } from '../lib/validation'
 
@@ -13,10 +13,12 @@ workflow RESOLVE_KOFAM_DB {
 
     main:
 
+    // Prefer an external image, then fall back to the BenchAnnot-managed image.
     def expectedDb = params.kofamscan_db \
         ? params.kofamscan_db \
         : "${projectDir}/data/database/kofamscan/kofamscan_${params.kofamscan_db_release}.sqsh"
 
+    // Managed images must also match the recorded size manifest.
     def dbIsValid = params.kofamscan_db \
         ? databaseImageIsValid(expectedDb) \
         : managedDatabaseImageIsValid(expectedDb)
@@ -26,23 +28,17 @@ workflow RESOLVE_KOFAM_DB {
 
         log.info "Using existing Kofam database: ${expectedDb}"
 
-        kofam_db_ch = channel.value(
-            file(expectedDb)
-        )
+        kofam_db_ch = channel.value(file(expectedDb))
 
     } else {
 
         log.info "Kofam database image not found or incomplete. Preparing release ${params.kofamscan_db_release}..."
 
-        def cacheDir = file(
-            "${projectDir}/data/database/kofamscan/download"
-        )
+        def cacheDir = file("${projectDir}/data/database/kofamscan/download")
 
         cacheDir.mkdirs()
 
-        prepared = PREPARE_KOFAM(
-            cacheDir.toString()
-        )
+        prepared = PREPARE_KOFAM(cacheDir.toString())
 
         packed = PACK_SQUASHFS(
             prepared.database_dir,
@@ -50,10 +46,8 @@ workflow RESOLVE_KOFAM_DB {
             "kofamscan_${params.kofamscan_db_release}"
         )
 
-        kofam_db_ch = packed.database.map {
-            _database_name, database_image ->
-                database_image
-        }
+        // KOFAMSCAN consumes only the image path from the packaging tuple.
+        kofam_db_ch = packed.database.map { _database_name, database_image -> database_image }
     }
 
 

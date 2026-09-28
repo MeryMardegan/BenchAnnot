@@ -8,16 +8,20 @@ include { RESOLVE_BAKTA_DB } from './workflows/bakta_database.nf'
 include { RESOLVE_PGAP } from './workflows/pgap_database.nf'
 include { RESOLVE_KOFAM_DB } from './workflows/kofam_database.nf'
 include { PROKARYOTE_ANNOTATION } from './workflows/prokaryote.nf'
-include { EUKARYOTE_ANNOTATION }  from './workflows/eukaryote.nf'
+include { EUKARYOTE_ANNOTATION } from './workflows/eukaryote.nf'
 include { RESOLVE_INTERPROSCAN_DB } from './workflows/interproscan_database.nf'
 
 workflow {
 
     main:
 
-    // =====================================================================
-    // Validate workflow selection
-    // =====================================================================
+    // ============================================================================
+    // Pipeline orchestration
+    // ============================================================================
+
+    // ---------------------------------------------------------------------------
+    // Workflow selection
+    // ---------------------------------------------------------------------------
 
     def validTypes = ['prokaryote', 'eukaryote', 'both']
 
@@ -31,20 +35,12 @@ workflow {
           --annotation_type both
         """
     }
-
-
-    // =====================================================================
-    // Shared eggNOG database
-    //
-    // Both annotation workflows use the same eggNOG database.
-    // Therefore, it is resolved/prepared only once per execution.
-    // =====================================================================
-    
+    // Resolve this shared database once for both annotation branches.
     RESOLVE_EGGNOG_DB()
 
-    // =====================================================================
-    // Prokaryotic annotation workflow
-    // =====================================================================
+    // ---------------------------------------------------------------------------
+    // Prokaryotic annotation
+    // ---------------------------------------------------------------------------
 
     if (params.annotation_type in ['prokaryote', 'both']) {
 
@@ -61,25 +57,27 @@ workflow {
             RESOLVE_PGAP.out.pgap_python
         )
     }
-
-
-    // =====================================================================
-    // Eukaryotic annotation workflow
-    // =====================================================================
+    // ---------------------------------------------------------------------------
+    // Eukaryotic annotation
+    // ---------------------------------------------------------------------------
 
     if (params.annotation_type in ['eukaryote', 'both']) {
 
         EUKARYOTE_INPUTS()
-	RESOLVE_KOFAM_DB()
-	RESOLVE_INTERPROSCAN_DB()
+        RESOLVE_KOFAM_DB()
+        RESOLVE_INTERPROSCAN_DB()
 
         EUKARYOTE_ANNOTATION(
             EUKARYOTE_INPUTS.out.samples,
             RESOLVE_KOFAM_DB.out.database,
-	    RESOLVE_INTERPROSCAN_DB.out.database,
+            RESOLVE_INTERPROSCAN_DB.out.database,
             RESOLVE_EGGNOG_DB.out.database
         )
     }
+
+    // ---------------------------------------------------------------------------
+    // Completion status
+    // ---------------------------------------------------------------------------
 
     onComplete:
     if (workflow.success) {

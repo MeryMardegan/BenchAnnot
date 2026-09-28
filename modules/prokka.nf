@@ -6,10 +6,10 @@ process PROKKA {
     publishDir "${params.outdir}/prokaryote_output_tools/prokka", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
-    tuple val (sample_id), path(fasta_file)
+    tuple val(sample_id), path(fasta_file)
 
     output:
-    tuple val (sample_id), path("results/${sample_id}.*"), emit: results
+    tuple val(sample_id), path("results/${sample_id}.*"), emit: results
 
     script:
     """

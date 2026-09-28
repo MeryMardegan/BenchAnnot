@@ -1,62 +1,65 @@
-# KofamScan Module
+# KofamScan
 
-KofamScan is a tool for functional annotation that assigns KEGG Orthologs (KOs) to protein sequences using HMM profiles from the KEGG database.
+## Purpose
+
+KofamScan assigns KEGG Ortholog identifiers using profile HMMs and
+profile-specific score thresholds. BenchAnnot uses KofamScan 1.3.0 for the
+eukaryotic branch.
+
+## Processes and container
+
+| Process | Label | Container |
+| --- | --- | --- |
+| `PREPARE_KOFAM` | `kofamscan_prepare` | host tools configured by the executor |
+| `KOFAMSCAN` | `kofamscan` | `docker://quay.io/biocontainers/kofamscan:1.3.0--hdfd78af_2` |
+
+Preparation downloads the profiles and KO list for the pinned archive release,
+extracts them, and verifies that `profiles/` is non-empty and `ko_list` exists.
+Preparation does not explicitly verify `profiles/eukaryote.hal`, which is the
+profile used during annotation.
+
+## Database
+
+`params.kofamscan_db` may point to an existing non-empty `.sqsh` image. If no
+valid image is supplied, the pipeline uses `params.kofamscan_db_release`
+(`2026-07-02` by default), prepares the database, and packages:
+
+```text
+data/database/kofamscan/kofamscan_2026-07-02.sqsh
+```
+
+The image root contains `profiles/` and `ko_list`. It is mounted read-only at
+`/database`; annotation uses `/database/profiles/eukaryote.hal` and
+`/database/ko_list`.
 
 ## Input
 
-- **Protein sequences** in FASTA format (`.faa`)  
-  Typically generated from genome annotation (e.g., with Prokka or GFFREAD).
-- **HMM profile database** (downloaded separately):  
-  - `profiles/` → HMM profiles for KO assignments  
-  - `ko_list` → KO ID definitions
+`KOFAMSCAN` consumes the protein tuple emitted by GFFread plus the database
+image:
 
-In this pipeline, the database is packaged as a SquashFS image under:
-`data/database/kofamscan/`
+```text
+tuple(sample_id, <sample_id>_gffread.faa), kofamscan_database_image
+```
 
 ## Output
 
-- Tab-delimited results with KO assignments for each input proteome.  
-- Example output file:
-`data/reproduced/eukaryote_output_tools/kofamscan/<sample>.kofam.txt`
-The output contains:
-- Query sequence ID
-- Assigned KO number
-- Threshold information
-- E-value and score
+KofamScan runs `exec_annotation` in `detail-tsv` mode and reports unannotated
+queries:
 
-## Running Standalone
-
-To run KofamScan outside Nextflow (standalone example):
-
-```bash
-exec_annotation \
--o drosophila_ko.txt \
--p data/database/kofamscan/profiles/ \
--k data/database/kofamscan/ko_list \
-drosophila_melanogaster.faa
+```text
+<outdir>/eukaryote_output_tools/kofamscan/<sample_id>.kofam.txt
 ```
 
-## Integration in Pipeline
+The downstream analysis retains significant rows marked with `*`; that filter
+is not applied by the Nextflow process.
 
-Module definition: `modules/KofamScan.nf`
-Results are automatically stored by default under:
-`data/reproduced/eukaryote_output_tools/kofamscan/`
+## Resources
 
-## Database Setup
+Preparation requests 1 CPU, 4 GB, and 24 hours. Annotation inherits the default
+CPU count and requests 128 GB for 24 hours.
 
-Before running, download the KEGG HMM profiles:
-wget ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
-wget ftp://ftp.genome.jp/pub/db/kofam/ko_list.gz
+## Example
 
-tar -xzf profiles.tar.gz -C data/database/kofamscan/
-gunzip ko_list.gz -c > data/database/kofamscan/ko_list
-
-Ensure that:
-
-- `profiles/` contains all `.hmm` files
-- `ko_list` is in the same `kofamscan/` directory
-
-## Notes
-- KofamScan uses adaptive score thresholds for higher accuracy compared to fixed E-values.
-- The module runs inside a container for reproducibility.
-- Input proteins typically come from GFFREAD outputs in this pipeline.
+```bash
+nextflow run main.nf --annotation_type eukaryote
+```

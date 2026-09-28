@@ -8,6 +8,7 @@ workflow RESOLVE_EGGNOG_DB {
 
     main:
 
+    // Reuse the configured image or build the pinned database once for both branches.
     if (databaseImageIsValid(params.eggnog_db)) {
 
         log.info "Using existing eggNOG database: ${params.eggnog_db}"
@@ -19,6 +20,7 @@ workflow RESOLVE_EGGNOG_DB {
 
         prepared = PREPARE_EGGNOG()
         packed = PACK_SQUASHFS(prepared.database_dir, 'eggnog', 'eggnog_2026-09')
+        // Annotation processes consume only the image path from the packaging tuple.
         eggnog_db_ch = packed.database.map { _database_name, database_image -> database_image }
     }
 

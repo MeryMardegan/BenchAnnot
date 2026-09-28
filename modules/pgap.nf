@@ -32,7 +32,7 @@ process PREPARE_PGAP_PYTHON {
     export MAMBA_ROOT_PREFIX="\$MAMBA_ROOT"
 
 
-    # If a valid runtime already exists, reuse it.
+    # Reuse a complete runtime to keep preparation idempotent.
     if [ -x "\$RUNTIME/bin/python" ]; then
         "\$RUNTIME/bin/python" -c \
             'import sys; assert sys.version_info[:2] == (3, 11)'
@@ -40,7 +40,7 @@ process PREPARE_PGAP_PYTHON {
         exit 0
     fi
 
-    # Remove an incomplete installation from a previous failed attempt.
+    # Remove partial state before recreating the runtime.
     rm -rf "\$RUNTIME"
 
     curl -Ls \
@@ -127,17 +127,16 @@ process PGAP {
 
     export PGAP_INPUT_DIR="${pgap_dir}"
 
-     
     "${pgap_python_dir}/bin/python" \
-	"${pgap_dir}/pgap.py" \
-	-n \
-	-g ${fasta_file} \
-	-s "${species}" \
-	--taxcheck \
-	--auto-correct-tax \
-	-o ${sample_id}_pgap \
-	-D singularity \
-	--container-path "${pgap_container}" \
-	--no-internet
-     """
+        "${pgap_dir}/pgap.py" \
+        -n \
+        -g ${fasta_file} \
+        -s "${species}" \
+        --taxcheck \
+        --auto-correct-tax \
+        -o ${sample_id}_pgap \
+        -D singularity \
+        --container-path "${pgap_container}" \
+        --no-internet
+    """
 }

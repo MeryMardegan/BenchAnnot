@@ -34,9 +34,9 @@ process PREPARE_INTERPROSCAN {
     echo "========================================"
 
 
-    # ============================================================
+    # ---------------------------------------------------------------------------
     # Download archive
-    # ============================================================
+    # ---------------------------------------------------------------------------
 
     if [ -s "\$ARCHIVE" ] && [ -s "\$MD5_FILE" ]; then
 
@@ -74,9 +74,9 @@ process PREPARE_INTERPROSCAN {
     fi
 
 
-    # ============================================================
+    # ---------------------------------------------------------------------------
     # Verify archive
-    # ============================================================
+    # ---------------------------------------------------------------------------
 
     echo "Validating InterProScan archive..."
 
@@ -94,9 +94,9 @@ process PREPARE_INTERPROSCAN {
     echo "InterProScan archive checksum OK"
 
 
-    # ============================================================
+    # ---------------------------------------------------------------------------
     # Extract data
-    # ============================================================
+    # ---------------------------------------------------------------------------
 
     echo "Extracting InterProScan database..."
 
@@ -142,14 +142,14 @@ process INTERPROSCAN {
     publishDir "${params.outdir}/eukaryote_output_tools/interproscan", mode: 'copy'
 
     input:
-    // Input comes from GFFREAD: tuple(val(sample_id), path("${sample_id}.faa")).
+    // Preserve the sample key emitted with the GFFread protein FASTA.
     tuple val(sample_id), path(faa)
     path ips_db
 
     output:
     // Standardize output names to a stable module prefix.
     tuple val(sample_id),
-          path ("${sample_id}.interpro.*"),
+          path("${sample_id}.interpro.*"),
           emit: results
 
     script:
@@ -159,7 +159,6 @@ process INTERPROSCAN {
     """
     set -euo pipefail
     # Keep temporary files scoped to the task directory.
-
     mkdir -p temp
 
     /opt/interproscan/interproscan.sh \

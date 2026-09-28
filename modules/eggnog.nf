@@ -24,8 +24,7 @@ process PREPARE_EGGNOG {
 
     cp "\$DOWNLOADER" ./download_eggnog_data.py
 
-    # eggNOG-mapper 2.1.13 still points to the obsolete eggnogdb.embl.de host.
-    # Keep the original mapper version, but update only the download host.
+    # Preserve mapper 2.1.13 while replacing its obsolete download host.
     sed -i \
         's#eggnogdb.embl.de#eggnog5.embl.de#g' \
         download_eggnog_data.py
@@ -35,8 +34,7 @@ process PREPARE_EGGNOG {
         -M \
         --data_dir eggnog_db
 
-    # The original downloader may exit successfully even when wget fails,
-    # therefore validate the required database files explicitly.
+    # The downloader can mask wget failures, so verify all required files.
     echo "Validating eggNOG database..."
 
     test -s eggnog_db/eggnog.db || {
@@ -88,7 +86,7 @@ process EGGNOG_PROKARYOTE {
 
     source /usr/local/bin/_activate_current_env.sh
 
-    # Use a local temp directory to avoid polluting the work directory
+    # Keep temporary files scoped to this task.
     mkdir -p tmp
     mkdir -p ${sample_id}_eggnog
 
@@ -117,18 +115,17 @@ process EGGNOG_EUKARYOTE {
     path eggnog_db
 
     output:
-    tuple val(sample_id), path ("${sample_id}_eggnog/*"), emit: eggnog_results
+    tuple val(sample_id), path("${sample_id}_eggnog/*"), emit: eggnog_results
 
     script:
     """
     set -euo pipefail
 
-    # Activate the container's environment for eggNOG-mapper
     export MAMBA_SKIP_ACTIVATE=""
     export EGGNOG_DATA_DIR=/database
     export NXT_TASK_MONITOR=0
 
-    # Use a local temp directory to avoid polluting the work directory
+    # Keep temporary files scoped to this task.
     mkdir -p tmp
     mkdir -p ${sample_id}_eggnog
 
@@ -140,8 +137,8 @@ process EGGNOG_EUKARYOTE {
         -m mmseqs \
         --cpu ${task.cpus} \
         --data_dir /database \
-	    --output ${sample_id}_eggnog \
-	    --output_dir ${sample_id}_eggnog \
+        --output ${sample_id}_eggnog \
+        --output_dir ${sample_id}_eggnog \
         --temp_dir ./tmp
-        """
+    """
 }

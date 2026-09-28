@@ -261,6 +261,21 @@ InterProScan  InterProScan_returned
 correct. Coverage and UpSet membership use returned flags. Functional
 classification uses description content.
 
+The primary UpSet and functional comparison share this reference-selection
+contract:
+
+```text
+prepared reference
+-> RNA_ID present in the GFFread FASTA
+-> first submitted RNA_ID per locus_tag
+```
+
+The UpSet retains this complete representative universe, including tool
+no-hits, and uses significant Kofam hits. The primary functional comparison
+adds one further filter: every retained RNA_ID must have `<tool>_returned ==
+True` for Kofam, Pannzer, EggNOG, and InterProScan. Reference descriptions in
+the functional plot are restricted to that same common-tool universe.
+
 Canonical selection preserves one row per selected locus and retains
 `resolution_status` and `submission_status`. It does not use a tool description
 to choose a canonical protein. Canonical coverage columns are:

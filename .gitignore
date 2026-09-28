@@ -1,31 +1,25 @@
 __pycache__/
 *.pyc
 *.egg-info/
+
+# Agent-local configuration and generated support files
 .opencode/
 **/2_run/output/
 **/2_run/tmp/
 .venv/
 .vscode/
 
-# Data files are intentionally versionable. Git tracks files, not empty
-# directories; add a .gitkeep file when an empty directory must be preserved.
+# Local biological data and generated pipeline resources are never committed.
+# Keep only directory markers so the expected structure remains versioned.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
 
 # Ignore only generated top-level directories, not project data directories.
 /databases/
 /results/
 *.out
 *.log
-
-# Large local reference genomes are not committed.
-/data/genome_eukaryote/*
-!/data/genome_eukaryote/.gitkeep
-/data/genome_prokaryote/*
-!/data/genome_prokaryote/.gitkeep
-
-# Original tool outputs are local benchmark data. Keep only directory markers.
-/data/origin/**
-!/data/origin/**/
-!/data/origin/**/.gitkeep
 
 # Environments
 .env
@@ -42,14 +36,11 @@ work/
 # Local container cache
 /apptainer_cache/
 
-# Generated pipeline resources
-/data/database/
-/data/runtime/
-/data/reproduced/
-
 # Editor / temporary backups
 *.save
 
-# Local tests
+# Local test suites and fixtures
+/tests/
+/analysis_benchannot/tests/
 /teste.sqsh
 /teste_db/

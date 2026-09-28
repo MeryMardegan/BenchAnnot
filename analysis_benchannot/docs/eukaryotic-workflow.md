@@ -51,43 +51,36 @@ reference and the raw outputs from KofamScan, Pannzer, EggNOG, and InterProScan.
 It writes cleaned per-tool tables and the combined
 `<organism>_functional_annotations.tsv` table.
 
-Kofam produces two retained variants for overlap analysis:
+Only significant Kofam hits (`marker == "*"`) enter the downstream functional
+table and figures. Presence plots count a returned row even when its
+description is empty, `-`, or otherwise non-informative. The combined table
+therefore stores an explicit `<tool>_returned` Boolean flag for every tool in
+addition to the description column.
 
-- all Kofam hits;
-- significant hits where `marker == "*"`.
+The UpSet reference universe is first restricted to exact RNA_ID values present
+in the GFFread FASTA, then reduced to the first submitted transcript per
+`locus_tag`. Tool memberships are restricted to those representatives, so
+RNA_ID values not returned by a tool remain explicit no-hits. The combined
+two-organism figure uses significant Kofam hits and the fixed source-column
+order Reference, Kofam, Pannzer, EggNOG, InterProScan.
 
-Only significant Kofam hits enter the downstream functional table. Presence
-plots count any returned row, even when its description is empty, `-`, or
-otherwise non-informative. The combined table therefore stores an explicit
-`<tool>_returned` Boolean flag for every tool in addition to the description
-column.
-
-The notebook also writes exact RNA-level UpSet tables and plots. For
-*D. melanogaster*, it additionally selects the first reference transcript in
-table order for each `locus_tag` and writes a second, noncanonical
-representative-per-locus UpSet analysis. The corresponding files are named
-`drosophila_melanogaster_*_first_reference_transcript_{all_kofam,significant_kofam}`.
-UpSet categories are displayed by cardinality from largest to smallest; the
-exported membership tables keep the fixed source-column order.
-
-The cleaning summary is a 4-by-2 panel grid: tools are rows, *S. cerevisiae*
-is the first column, and *D. melanogaster* is the second. Every panel uses its
-own count scale and has one stacked bar partitioning the GFFread input into
-RNA_IDs not identified, identified but not retained, and retained after the
-tool-specific selection and exact reference match. The exact selection rule is
-shown in the panel text. `represented_loci` remains available in the summary
-table for the Drosophila locus-level audit but is not mixed into the RNA_ID
-plot.
+The processing summary is a 4-by-2 panel grid: tools are rows,
+*S. cerevisiae* is the first column, and *D. melanogaster* is the second. Every
+panel shows four cumulative stages: GFFread input RNA_ID, tool-identified
+RNA_ID, retained RNA_ID after cleaning and exact reference matching, and
+retained representative RNA_ID after selecting the first submitted transcript
+per locus.
 
 ### 3. Analyze functional annotations
 
-`2_run/notebooks/eukaryotic/3_functional_analysis.ipynb` has three analyses:
+`2_run/notebooks/eukaryotic/3_functional_analysis.ipynb` has two analyses:
 
-1. **All RNA records:** every reference `RNA_ID` is evaluated independently.
-2. **First transcript per locus:** the first transcript in reference table
-   order is selected as a deterministic, explicitly noncanonical sensitivity
-   analysis.
-3. **Reviewed Swiss-Prot canonical subset:** canonical selection is external
+1. **Submitted common-tool comparison:** restrict the reference to RNA_ID
+   values present in the GFFread FASTA, select the first submitted transcript
+   per locus, and retain only proteins returned by Kofam, Pannzer, EggNOG, and
+   InterProScan. This adds a common-hit filter to the same representative
+   universe used by the UpSet figure.
+2. **Reviewed Swiss-Prot canonical subset:** canonical selection is external
    to tool performance and is resolved conservatively.
 
 Functional descriptions are non-informative when they are missing, empty,
