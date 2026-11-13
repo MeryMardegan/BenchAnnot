@@ -47,6 +47,17 @@ def project_paths(dataset: Dataset) -> ProjectPaths:
     )
 
 
+def pgap_annotation_path(
+    paths: ProjectPaths,
+    organism: str,
+    extension: Literal["gff", "gbk"],
+) -> Path:
+    pgap_dir = paths.prokaryote_tools / "pgap"
+    if paths.dataset == "origin":
+        return pgap_dir / f"{organism}_annot.{extension}"
+    return pgap_dir / f"{organism}_pgap" / f"annot.{extension}"
+
+
 def repository_relative(path: Path | str) -> str:
     candidate = Path(path)
     if not candidate.is_absolute():

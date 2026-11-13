@@ -54,12 +54,24 @@ The complete PGAP output directory is published as:
 <outdir>/prokaryote_output_tools/pgap/<sample_id>_pgap/
 ```
 
-## Downstream limitation
+## Downstream paths
 
-The prokaryotic notebooks currently expect flat files named
-`<sample_id>_annot.gff` and `<sample_id>_annot.gbk`. BenchAnnot does not yet
-select and rename those files from the published PGAP directory. Reproduced
-PGAP output therefore does not directly satisfy the notebook input contract.
+The prokaryotic notebooks select the PGAP annotation files explicitly by
+dataset. Archived `origin` outputs use flat, sample-prefixed filenames:
+
+```text
+pgap/<sample_id>_annot.gff
+pgap/<sample_id>_annot.gbk
+```
+
+Pipeline-generated `reproduced` outputs retain the native PGAP directory:
+
+```text
+pgap/<sample_id>_pgap/annot.gff
+pgap/<sample_id>_pgap/annot.gbk
+```
+
+No filename probing or cross-dataset fallback is used.
 
 ## Resources
 

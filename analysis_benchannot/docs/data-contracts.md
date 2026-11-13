@@ -162,16 +162,25 @@ prokaryote_output_tools/prokka/<organism>.gbk
 prokaryote_output_tools/bakta/<organism>.gff3
 prokaryote_output_tools/bakta/<organism>.gbff
 prokaryote_output_tools/eggnog/<organism>.emapper.decorated.gff
-prokaryote_output_tools/pgap/<organism>_annot.gff
-prokaryote_output_tools/pgap/<organism>_annot.gbk
 ```
 
-The PGAP paths are the current notebook consumer contract and match the archived
-origin layout. The Nextflow PGAP process currently publishes a
-`<sample_id>_pgap/` directory instead of flattening and renaming individual
-files. Reproduced PGAP compatibility is therefore unresolved. Until the real
-published contents are verified and a publication rule is implemented, the
-notebooks intentionally fail preflight rather than search alternative paths.
+PGAP uses an explicit dataset-specific layout. Archived origin files are:
+
+```text
+data/origin/prokaryote_output_tools/pgap/<organism>_annot.gff
+data/origin/prokaryote_output_tools/pgap/<organism>_annot.gbk
+```
+
+Nextflow publishes reproduced files without flattening the native PGAP output
+directory:
+
+```text
+data/reproduced/prokaryote_output_tools/pgap/<organism>_pgap/annot.gff
+data/reproduced/prokaryote_output_tools/pgap/<organism>_pgap/annot.gbk
+```
+
+`pgap_annotation_path()` selects one of these contracts from `DATASET`. It does
+not probe candidate filenames or fall back to the other dataset.
 
 ## Analysis outputs
 
