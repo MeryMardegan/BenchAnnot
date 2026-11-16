@@ -118,9 +118,20 @@ def italic_name(name: str) -> str:
     return r"$\it{" + text.replace(" ", r"\ ") + "}$"
 
 
-def panel_title(axis: plt.Axes, name: str, *, fontsize: float = 10, pad: float = 8) -> None:
-    """Set an italic panel title, mapping known organism keys if needed."""
-    axis.set_title(italic_name(PLOT_NAMES.get(name, name)), fontsize=fontsize, pad=pad)
+def panel_title(
+    axis: plt.Axes,
+    name: str,
+    *,
+    panel_index: int | None = None,
+    fontsize: float = 8.5,
+    pad: float = 8,
+) -> None:
+    """Set an italic panel title with optional panel letter (A, B, etc.)."""
+    title_text = italic_name(PLOT_NAMES.get(name, name))
+    if panel_index is not None and panel_index < 26:
+        letter = chr(ord("A") + panel_index)
+        title_text = f"{letter}) {title_text}"
+    axis.set_title(title_text, fontsize=fontsize, pad=pad)
 
 
 def denominator_note(axis: plt.Axes, text: str) -> None:
@@ -292,7 +303,7 @@ def plot_rate_panels(
                 axis.set_ylim(0, current_ymax * 1.25)
         axis.set_xlabel("")
         axis.set_ylabel(ylabel if index % (ncols or len(panels)) == 0 else "")
-        panel_title(axis, panel_key)
+        panel_title(axis, panel_key, panel_index=index)
         if panel_notes and panel_key in panel_notes:
             denominator_note(axis, panel_notes[panel_key])
         if closed_frame:
@@ -395,7 +406,7 @@ def plot_stacked_panels(
         )
         axis.set_ylim(0, max(totals) * 1.15 if len(totals) else 1)
         axis.set_ylabel(ylabel if index % ncols == 0 else "")
-        panel_title(axis, panel_key)
+        panel_title(axis, panel_key, panel_index=index)
         style_axis(axis)
         if index % ncols != 0:
             axis.set_ylabel("")
@@ -601,7 +612,7 @@ def plot_functional_shift_panels(
                 for source in plot_table.index
             ]
         )
-        panel_title(axis, panel_key)
+        panel_title(axis, panel_key, panel_index=index)
         denominator_note(axis, f"n = {total:,}")
         style_axis(axis, hide_left=True)
         axis.tick_params(axis="y", length=0, labelleft=index == 0, pad=12)
@@ -657,7 +668,7 @@ def plot_upset_panels(
         raise ValueError("At least one panel is required")
     labels = [UPSET_LABELS.get(source, display_name(source)) for source in source_order]
     images = []
-    for key, membership in memberships.items():
+    for idx, (key, membership) in enumerate(memberships.items()):
         table = membership[list(source_order)].astype(bool)
         table.columns = labels
         upset = UpSet(
@@ -675,7 +686,8 @@ def plot_upset_panels(
         upset_axes["intersections"].set_ylabel(f"Intersection size ({count_label})")
         if upset_axes.get("totals") is not None:
             upset_axes["totals"].set_xlabel(f"Total {count_label}")
-        panel.suptitle(italic_name(PLOT_NAMES.get(key, key)), fontsize=11, y=1.0)
+        letter = f"{chr(ord('A') + idx)}) " if len(memberships) > 1 and idx < 26 else ""
+        panel.suptitle(f"{letter}{italic_name(PLOT_NAMES.get(key, key))}", fontsize=9, y=1.0)
         buffer = BytesIO()
         panel.savefig(buffer, format="png", dpi=panel_dpi, bbox_inches="tight", facecolor="white")
         plt.close(panel)
