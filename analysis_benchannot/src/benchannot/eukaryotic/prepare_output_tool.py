@@ -458,6 +458,144 @@ def plot_cleaning_summary(summary: pd.DataFrame, output_path: Path) -> None:
     plt.close(fig)
 
 
+def plot_cleaning_summary_stacked(
+    summary: pd.DataFrame,
+    output_path: Path,
+    *,
+    title: str | None = "Tool-specific RNA_ID processing summary",
+    species_keys: bool = False,
+) -> Path | None:
+    """Save one stacked processing panel per organism in the shared style."""
+    from benchannot.plotting import BLUE, NAVY, TEAL, plot_stacked_panels
+
+    organisms = summary[["organism", "display_name"]].drop_duplicates()
+    if len(organisms) != 2:
+        raise ValueError("Cleaning summary figure requires exactly two organisms")
+    categories = ["Not identified", "Identified, not retained", "Retained RNA_ID"]
+    panels = {}
+    for _, organism_row in organisms.iterrows():
+        subset = (
+            summary.loc[summary["organism"] == organism_row["organism"]]
+            .set_index("source")
+            .reindex(TOOL_ORDER)
+        )
+        if subset[["gffread_input_rna_ids", "tool_identified_rna_ids", "retained_rna_ids"]].isna().any().any():
+            raise ValueError("Cleaning summary is missing an organism/tool combination")
+        input_counts = subset["gffread_input_rna_ids"].astype(int)
+        identified_counts = subset["tool_identified_rna_ids"].astype(int)
+        retained_counts = subset["retained_rna_ids"].astype(int)
+        not_identified = input_counts - identified_counts
+        identified_not_retained = identified_counts - retained_counts
+        if (not_identified < 0).any() or (identified_not_retained < 0).any():
+            raise ValueError("Tool processing counts must be monotonic")
+        segments = pd.DataFrame(
+            {
+                categories[0]: not_identified,
+                categories[1]: identified_not_retained,
+                categories[2]: retained_counts,
+            }
+        )
+        segments.index.name = "source"
+        panels[
+            organism_row["organism"] if species_keys else organism_row["display_name"]
+        ] = segments
+    return plot_stacked_panels(
+        panels,
+        categories=categories,
+        colors=[NAVY, BLUE, TEAL],
+        labels=[
+            "Not identified by tool",
+            "Identified but not retained",
+            "Retained RNA_ID",
+        ],
+        ylabel="Exact count",
+        title=title,
+        ncols=1,
+        save_path=output_path,
+    )
+
+
+def plot_representative_stages_panels(
+    summary: pd.DataFrame,
+    output_path: Path,
+    *,
+    title: str | None = None,
+    species_keys: bool = True,
+) -> Path | None:
+    """Save cumulative processing stages per tool and organism in a closed-frame side-by-side style."""
+    from benchannot.plotting import (
+        BLUE,
+        NAVY,
+        RUST,
+        TEAL,
+        display_name,
+        plot_rate_panels,
+    )
+
+    stages = [
+        ("gffread_input_rna_ids", "GFFread input"),
+        ("tool_identified_rna_ids", "Tool identified"),
+        ("retained_rna_ids", "Retained RNA_ID"),
+        ("representative_retained_loci", r"$\it{One\ per\ locus}$"),
+    ]
+    organisms = summary[["organism", "display_name"]].drop_duplicates()
+    if len(organisms) != 2:
+        raise ValueError("Representative processing figure requires exactly two organisms")
+    panels = {}
+    panel_notes = {}
+    source_order = [display_name(source) for source in TOOL_ORDER]
+    for _, organism_row in organisms.iterrows():
+        key = organism_row["organism"] if species_keys else organism_row["display_name"]
+        subset = (
+            summary.loc[summary["organism"] == organism_row["organism"]]
+            .set_index("source")
+            .reindex(TOOL_ORDER)
+        )
+        missing_columns = [column for column, _ in stages if column not in subset]
+        if missing_columns:
+            raise ValueError(f"Representative summary is missing: {missing_columns}")
+        if subset[[column for column, _ in stages]].isna().any().any():
+            raise ValueError("Representative summary is missing an organism/tool combination")
+        tidy = subset[[column for column, _ in stages]].rename(
+            columns=dict(stages)
+        ).reset_index(names="Source")
+        tidy = tidy.melt(
+            id_vars="Source",
+            var_name="Metric",
+            value_name="Value",
+        )
+        tidy["Source"] = tidy["Source"].map(display_name)
+        panels[key] = tidy
+        denominator = int(subset["gffread_input_rna_ids"].iloc[0])
+        panel_notes[key] = f"n = {denominator:,}"
+
+    return plot_rate_panels(
+        panels,
+        ylabel="Exact count",
+        title=title,
+        source_order=source_order,
+        metric_order=[label for _, label in stages],
+        palette={
+            "GFFread input": NAVY,
+            "Tool identified": BLUE,
+            "Retained RNA_ID": TEAL,
+            r"$\it{One\ per\ locus}$": RUST,
+        },
+        value_format="{:,.0f}",
+        panel_notes=panel_notes,
+        bar_width=0.68,
+        ncols=2,
+        panel_width=3.3,
+        panel_height=3.25,
+        sharey=False,
+        wspace=0.22,
+        label_fontsize=5.5,
+        label_rotation=90,
+        closed_frame=True,
+        save_path=output_path,
+    )
+
+
 def plot_rna_upset(membership: pd.DataFrame, title: str, output_path: Path) -> None:
     """Save a black, fixed-source-order UpSet plot of exact RNA_ID elements."""
     import matplotlib.pyplot as plt

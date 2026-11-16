@@ -21,6 +21,7 @@ class ProjectPaths:
     eukaryote_tools: Path
     prokaryote_tools: Path
     analysis_output: Path
+    figures: Path
 
 
 def project_paths(dataset: Dataset) -> ProjectPaths:
@@ -44,6 +45,7 @@ def project_paths(dataset: Dataset) -> ProjectPaths:
         eukaryote_tools=dataset_root / "eukaryote_output_tools",
         prokaryote_tools=dataset_root / "prokaryote_output_tools",
         analysis_output=ANALYSIS_ROOT / "2_run" / "output" / dataset,
+        figures=REPOSITORY_ROOT / "figures",
     )
 
 

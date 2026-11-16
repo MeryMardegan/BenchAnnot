@@ -36,10 +36,18 @@ workflow RESOLVE_PGAP {
 
     def expectedDir = file(params.pgap_dir)
     def expectedContainer = file(params.pgap_container)
+    def expectedVersion = file("${params.pgap_dir}/VERSION")
+    def expectedData = file("${params.pgap_dir}/input-${params.pgap_version}")
+    def pgapGuard = file("${expectedData}/.pgap_complete")
+    def aniGuard = file("${expectedData}/.ani_complete")
 
     if (
         expectedDir.exists() &&
         expectedDir.isDirectory() &&
+        expectedVersion.exists() &&
+        expectedVersion.text.trim() == params.pgap_version &&
+        pgapGuard.exists() &&
+        aniGuard.exists() &&
         expectedContainer.exists() &&
         expectedContainer.isFile() &&
         expectedContainer.size() > 0

@@ -201,12 +201,21 @@ def plot_concordance_upset(
     plt.show()
 
 
+def concordance_membership(
+    all_gffs_df: pd.DataFrame, tools_order: List[str]
+) -> pd.DataFrame:
+    """Return a boolean ``orf_id`` x source presence table in ``tools_order``."""
+    presence = pd.crosstab(all_gffs_df["orf_id"], all_gffs_df["Source"]) > 0
+    return presence[tools_order]
+
+
 def export_concordant_cds(
     all_gffs_df: pd.DataFrame,
     tools: List[str],
     ref_source: str,
     output_path: str,
     concordant_only: bool = True,
+    mode: str = "concordant",
 ) -> pd.DataFrame:
     """Export CDS with product annotations for all tools and reference.
 
@@ -221,9 +230,13 @@ def export_concordant_cds(
     output_path : str
         File path where the resulting CSV will be saved.
     concordant_only : bool, optional
-        If True, only export CDS present in all tools and the reference.
-        If False, export all reference CDS with left-joined tool annotations.
-        By default True.
+        Legacy flag. If True, exports concordant CDS only (intersection).
+        If False, exports all reference CDS (left join on reference).
+    mode : {'concordant', 'reference_all', 'union_all'}, optional
+        - 'concordant': only CDS present in ALL tools and reference.
+        - 'reference_all': all CDS present in the reference genome.
+        - 'union_all': full union of all CDS coordinates predicted by ANY tool or reference.
+        Default is 'concordant'.
 
     Returns
     -------
@@ -232,28 +245,50 @@ def export_concordant_cds(
     """
     reference_df = all_gffs_df[all_gffs_df["Source"] == ref_source]
 
-    if concordant_only:
+    if mode == "union_all":
+        base_df = (
+            all_gffs_df[["orf_id", "Start", "End", "Strand"]]
+            .drop_duplicates(subset=["orf_id"])
+            .sort_values(by=["Start", "End"])
+            .reset_index(drop=True)
+        )
+    elif mode == "reference_all" or not concordant_only:
+        base_df = (
+            reference_df[["orf_id", "Start", "End", "Strand"]]
+            .drop_duplicates(subset=["orf_id"])
+            .sort_values(by=["Start", "End"])
+            .reset_index(drop=True)
+        )
+    else:  # concordant
         ref_orfs = set(reference_df["orf_id"])
         concordant_orfs = ref_orfs
         for tool in tools:
             tool_orfs = set(all_gffs_df[all_gffs_df["Source"] == tool]["orf_id"])
             concordant_orfs = concordant_orfs.intersection(tool_orfs)
 
-        tp_df = reference_df[reference_df["orf_id"].isin(concordant_orfs)][
-            ["orf_id", "Start", "End", "Strand"]
-        ].copy()
-    else:
-        tp_df = reference_df[["orf_id", "Start", "End", "Strand"]].copy()
+        base_df = (
+            reference_df[reference_df["orf_id"].isin(concordant_orfs)][
+                ["orf_id", "Start", "End", "Strand"]
+            ]
+            .drop_duplicates(subset=["orf_id"])
+            .sort_values(by=["Start", "End"])
+            .reset_index(drop=True)
+        )
 
     for tool in tools:
-        tool_sub = all_gffs_df[all_gffs_df["Source"] == tool][["orf_id", "product", "gene"]]
-        tool_sub = tool_sub.rename(columns={"product": f"product_{tool}", "gene": f"gene_{tool}"})
-        tp_df = pd.merge(tp_df, tool_sub, on="orf_id", how="left")
+        tool_sub = (
+            all_gffs_df[all_gffs_df["Source"] == tool][["orf_id", "product", "gene"]]
+            .drop_duplicates(subset=["orf_id"])
+            .rename(columns={"product": f"product_{tool}", "gene": f"gene_{tool}"})
+        )
+        base_df = pd.merge(base_df, tool_sub, on="orf_id", how="left")
 
-    ref_sub = reference_df[["orf_id", "product", "gene"]].rename(
-        columns={"product": f"product_{ref_source}", "gene": f"gene_{ref_source}"}
+    ref_sub = (
+        reference_df[["orf_id", "product", "gene"]]
+        .drop_duplicates(subset=["orf_id"])
+        .rename(columns={"product": f"product_{ref_source}", "gene": f"gene_{ref_source}"})
     )
-    tp_df = pd.merge(tp_df, ref_sub, on="orf_id", how="left")
+    base_df = pd.merge(base_df, ref_sub, on="orf_id", how="left")
 
-    tp_df.to_csv(output_path, index=False)
-    return tp_df
+    base_df.to_csv(output_path, index=False)
+    return base_df

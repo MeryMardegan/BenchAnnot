@@ -98,6 +98,7 @@ process PREPARE_PGAP {
     "${pgap_python_dir}/bin/python" pgap.py \
         --use-version ${params.pgap_version} \
         --no-self-update \
+        --taxcheck \
         -D singularity
 
     rm -rf tmp
@@ -133,6 +134,7 @@ process PGAP {
         -g ${fasta_file} \
         -s "${species}" \
         --taxcheck \
+        --no-self-update \
         --auto-correct-tax \
         -o ${sample_id}_pgap \
         -D singularity \

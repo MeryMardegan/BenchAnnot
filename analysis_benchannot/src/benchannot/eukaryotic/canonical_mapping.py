@@ -335,6 +335,49 @@ def plot_canonical_coverage(
     plt.close(figure)
 
 
+def plot_canonical_coverage_panels(
+    coverage_by_panel: dict[str, pd.DataFrame],
+    title: str,
+    output_path: Path,
+) -> Path | None:
+    """Save side-by-side canonical-coverage panels in the shared style."""
+    from benchannot.plotting import (
+        NAVY,
+        ORANGE,
+        TEAL,
+        display_name,
+        plot_rate_panels,
+    )
+
+    metrics = ["RNA_ID count", "Represented loci", "Recovered canonical RNA_ID"]
+    panels = {}
+    source_order = None
+    for panel, coverage in coverage_by_panel.items():
+        missing = {"Source", *metrics} - set(coverage.columns)
+        if missing:
+            raise ValueError(f"{panel} is missing coverage columns: {sorted(missing)}")
+        tidy = coverage.melt(
+            id_vars="Source",
+            value_vars=metrics,
+            var_name="Metric",
+            value_name="Value",
+        )
+        tidy["Source"] = tidy["Source"].map(display_name)
+        panels[panel] = tidy
+        if source_order is None:
+            source_order = list(dict.fromkeys(tidy["Source"]))
+    return plot_rate_panels(
+        panels,
+        ylabel="Exact count",
+        title=title,
+        source_order=source_order,
+        metric_order=metrics,
+        palette={metrics[0]: NAVY, metrics[1]: TEAL, metrics[2]: ORANGE},
+        value_format="{:,.0f}",
+        save_path=output_path,
+    )
+
+
 def _reviewed_candidates_by_refseq(payload: dict) -> dict[str, tuple[dict, ...]]:
     grouped: dict[str, list[dict]] = {}
     for record in _response_records(payload["response"]):
