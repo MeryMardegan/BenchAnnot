@@ -92,3 +92,29 @@ def categorize_functional_shifts(
         "Under-Annotation",
     ]
     return summary_table[col_order]
+
+
+def build_functional_plot_input(
+    df_func: pd.DataFrame, tools: List[str], ref_source: str = "Reference"
+) -> pd.DataFrame:
+    """Return shift summaries with the reference baseline as the first row."""
+    from benchannot.plotting import FUNCTIONAL_SHIFT_ORDER
+
+    summary = categorize_functional_shifts(df_func, tools, ref_source)
+    reference_info = df_func[f"product_{ref_source}"].apply(is_informative)
+    total = len(df_func)
+    reference_row = pd.DataFrame(
+        {
+            "Both Informative": [int(reference_info.sum())],
+            "Both Hypothetical": [int((~reference_info).sum())],
+            "Over-Annotation": [0],
+            "Under-Annotation": [0],
+        },
+        index=[ref_source],
+    )
+    plot_input = pd.concat([reference_row, summary]).reindex(
+        columns=list(FUNCTIONAL_SHIFT_ORDER), fill_value=0
+    )
+    if not (plot_input.sum(axis=1) == total).all():
+        raise ValueError("Functional shift rows must sum to the CDS denominator")
+    return plot_input

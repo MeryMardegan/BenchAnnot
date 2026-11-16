@@ -201,6 +201,14 @@ def plot_concordance_upset(
     plt.show()
 
 
+def concordance_membership(
+    all_gffs_df: pd.DataFrame, tools_order: List[str]
+) -> pd.DataFrame:
+    """Return a boolean ``orf_id`` x source presence table in ``tools_order``."""
+    presence = pd.crosstab(all_gffs_df["orf_id"], all_gffs_df["Source"]) > 0
+    return presence[tools_order]
+
+
 def export_concordant_cds(
     all_gffs_df: pd.DataFrame,
     tools: List[str],
