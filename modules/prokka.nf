@@ -2,18 +2,28 @@
 
 process PROKKA {
     label 'prokka'
-    container 'staphb/prokka:1.14.6'
-    publishDir "results/prokka", mode: 'copy' 
+    tag "Prokka annotation for ${sample_id}"
+    publishDir "${params.outdir}/prokaryote_output_tools/prokka", mode: 'copy', saveAs: { filename -> file(filename).name }
 
     input:
-    path fasta_file
+    tuple val(sample_id), path(fasta_file)
 
     output:
-    path "${fasta_file.baseName}_prokka" // each prokka output directory is named after the fasta file
+    tuple val(sample_id), path("results/${sample_id}.*"), emit: results
 
-    script: 
+    script:
     """
-    prokka --outdir ${fasta_file.baseName}_prokka --prefix ${fasta_file.baseName} ${fasta_file}
+    set -euo pipefail
+
+    mkdir -p tmp
+
+    export TMPDIR="\$PWD/tmp"
+
+    prokka \
+        --outdir results \
+        --prefix ${sample_id} \
+        --cpus ${task.cpus} \
+        --compliant \
+        ${fasta_file}
     """
 }
-

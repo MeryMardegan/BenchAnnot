@@ -1,0 +1,3 @@
+sample_id,genome_fasta,species,taxid,genetic_code
+escherichia_coli,data/genome_prokaryote/escherichia_coli.fna,Escherichia coli,562,11
+bacillus_subtilis,data/genome_prokaryote/bacillus_subtilis.fna,Bacillus subtilis,1423,11

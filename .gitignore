@@ -1,20 +1,46 @@
-# Large data files
-*.gz
-*.zip
-databases/
+__pycache__/
+*.pyc
+*.egg-info/
 
-# Heavy results
-results/
+# Agent-local configuration and generated support files
+.opencode/
+**/2_run/output/
+**/2_run/tmp/
+.venv/
+.vscode/
+
+# Local biological data and generated pipeline resources are never committed.
+# Keep only directory markers so the expected structure remains versioned.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+
+# Ignore only generated top-level directories, not project data directories.
+/databases/
+/results/
 *.out
 *.log
 
 # Environments
 .env
-.venv/
-__pycache__/
-*.pyc
 *.Rhistory
 
 # Nextflow
 work/
 .nextflow
+
+# Nextflow runtime files
+.nextflow*
+*.pid
+
+# Local container cache
+/apptainer_cache/
+
+# Editor / temporary backups
+*.save
+
+# Local test suites and fixtures
+/tests/
+/analysis_benchannot/tests/
+/teste.sqsh
+/teste_db/
